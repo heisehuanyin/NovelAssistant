@@ -9,7 +9,7 @@ QT       += xml
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-TARGET = NovelAssistant
+TARGET = WsNA
 TEMPLATE = app
 
 # The following define makes your compiler emit warnings if you use
@@ -27,14 +27,16 @@ CONFIG += c++11
 
 SOURCES += \
         main.cpp \
-        mainwindow.cpp \
-    projectmanager.cpp
+        mainwindow.cpp
 
 HEADERS += \
-        mainwindow.h \
-    projectmanager.h
+        mainwindow.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+DISTFILES += \
+    小说控制模型.md \
+    README.md
