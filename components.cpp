@@ -168,6 +168,7 @@ void UIComp::GTME::slot_insertNewType()
         return;
     }
     this->slot_typesSelected(this->types->currentText());
+    this->apply->setEnabled(true);
 }
 
 void UIComp::GTME::slot_itemUp()
@@ -175,6 +176,7 @@ void UIComp::GTME::slot_itemUp()
     auto x = this->items->currentIndex();
     auto target = itemsmodel->takeRow(x.row());
     this->itemsmodel->insertRow(x.row()-1,target);
+    this->apply->setEnabled(true);
 }
 
 void UIComp::GTME::slot_itemDown()
@@ -182,6 +184,7 @@ void UIComp::GTME::slot_itemDown()
     auto x = this->items->currentIndex();
     auto target = itemsmodel->takeRow(x.row());
     this->itemsmodel->insertRow(x.row()+1,target);
+    this->apply->setEnabled(true);
 }
 
 void UIComp::GTME::slot_itemAppend()
@@ -189,12 +192,17 @@ void UIComp::GTME::slot_itemAppend()
     auto xv = new QStandardItem("双击修改");
     xv->setEditable(true);
     this->itemsmodel->appendRow(xv);
+    this->apply->setEnabled(true);
 }
 
 void UIComp::GTME::slot_itemRemove()
 {
     auto x = this->items->currentIndex();
-    this->itemsmodel->removeRow(x.row());
+    if(this->itemsmodel->rowCount() == 1)
+        this->itemsmodel->clear();
+    else
+        this->itemsmodel->removeRow(x.row());
+    this->apply->setEnabled(true);
 }
 
 void UIComp::GTME::slot_itemApply()
@@ -211,19 +219,26 @@ void UIComp::GTME::slot_itemApply()
     }
 
     QSqlQuery q2;
+    q2.prepare("insert into table_gtm "
+               "(group_name, type_name, mark_number, mark_name) "
+               "values(?,?,?,?)");
+    QVariantList gname, tname, marknum, markname;
     for(int i=0; i<this->itemsmodel->rowCount(); ++i){
-        auto item = this->itemsmodel->takeItem(i);
-        QString exStr = "insert into table_gtm "
-                        "(group_name, type_name, mark_number, mark_name) "
-                        "values(\"_X1\",\"_X2\",%1,\"_X3\");";
-        exStr = exStr.arg(i);
-        exStr.replace("_X1",groupName);
-        exStr.replace("_X2", typeName);
-        exStr.replace("_X3", item->text());
-        if(!q2.exec(exStr)){
-            qDebug() << q2.lastError();
-        }
+        auto item = this->itemsmodel->item(i);
+        gname   << groupName;
+        tname   << typeName;
+        marknum << i;
+        markname<< item->text();
     }
+    q2.addBindValue(gname);
+    q2.addBindValue(tname);
+    q2.addBindValue(marknum);
+    q2.addBindValue(markname);
+
+    if(!q2.execBatch()){
+        qDebug() << q2.lastError();
+    }
+    this->apply->setEnabled(false);
 }
 
 void UIComp::GTME::slot_btnEnableRelyOnSelect(const QItemSelection &selected, const QItemSelection &deselected)
