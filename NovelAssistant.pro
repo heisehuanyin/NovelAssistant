@@ -29,11 +29,13 @@ CONFIG += c++11
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
-    sqlport.cpp
+    sqlport.cpp \
+    components.cpp
 
 HEADERS += \
         mainwindow.h \
-    sqlport.h
+    sqlport.h \
+    components.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -42,4 +44,6 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 DISTFILES += \
     小说控制模型.md \
-    README.md
+    README.md \
+    WsNovelAssistant.epgz \
+    NovelAssistant基本策划.docx

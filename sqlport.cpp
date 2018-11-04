@@ -2,6 +2,8 @@
 
 #include <QSqlQuery>
 
+using namespace Support;
+
 DatabaseInitialTool::DatabaseInitialTool()
 {
     this->createConnection();
