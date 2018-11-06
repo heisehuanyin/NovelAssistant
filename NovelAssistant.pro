@@ -30,12 +30,18 @@ SOURCES += \
         main.cpp \
         mainwindow.cpp \
     sqlport.cpp \
-    components.cpp
+    components.cpp \
+    locationedit.cpp \
+    propedit.cpp \
+    skilledit.cpp
 
 HEADERS += \
         mainwindow.h \
     sqlport.h \
-    components.h
+    components.h \
+    locationedit.h \
+    propedit.h \
+    skilledit.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

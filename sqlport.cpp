@@ -57,6 +57,7 @@ void DatabaseInitialTool::init_emptytable()
     query.exec("create table table_propbasic("
                "prop_id integer primary key autoincrement,"
                "name text,"
+               "prop_desc text,"
                "mark integer,"
                "number integer,"
                "comment text,"

@@ -8,7 +8,8 @@
 #include <QDebug>
 #include <iostream>
 
-UIComp::GTME::GTME():
+UIComp::GTME::GTME(QWidget *parent):
+    QDialog (parent),
     groups(new QComboBox),
     types(new QComboBox),
     items(new QListView),
@@ -29,7 +30,7 @@ UIComp::GTME::GTME():
     x->addWidget(this->groups, 0, 1, 1, 2);
     this->groups->addItem("道具级别");
     this->groups->addItem("技能级别");
-    this->groups->addItem("其他级别");
+    this->groups->addItem("境界级别");
     this->groups->addItem("<手动选择>");
     this->groups->setCurrentIndex(3);
     this->connect(this->groups, &QComboBox::currentTextChanged,
@@ -126,7 +127,8 @@ void UIComp::GTME::slot_typesSelected(const QString &text)
     }
     if(text == QString())
         return;
-    QString exeStr = "select mark_name "
+    QString exeStr = "select mark_name, "
+                     "mark_id "
                      "from table_gtm "
                      "where (group_name = \""+this->groups->currentText()+"\")"
                      "  and (type_name  = \""+text+"\") "
@@ -136,11 +138,13 @@ void UIComp::GTME::slot_typesSelected(const QString &text)
         QMessageBox::critical(this, "ERROR", "SQL语句执行错误2");
         return;
     }
+    this->list.clear();
     while (q.next()) {
         auto item = q.value(0).toString();
         auto xv = new QStandardItem(item);
         xv->setEditable(true);
         this->itemsmodel->appendRow(xv);
+        this->list.append(q.value(1));
     }
     this->apply->setEnabled(false);
     if(this->itemsmodel->rowCount()==0){
@@ -209,34 +213,73 @@ void UIComp::GTME::slot_itemApply()
 {
     auto groupName = this->groups->currentText();
     auto typeName = this->types->currentText();
-    QString exeStr = "delete "
-                     "from table_gtm "
-                     "where (group_name = \"" + groupName + "\")"
-                     " and  (type_name  = \"" + typeName  + "\");";
+
     QSqlQuery q;
-    if(!q.exec(exeStr)){
-        qDebug() << q.lastError();
+    int listLen = this->list.length();
+    int itemCount=this->itemsmodel->rowCount();
+
+    if( listLen > itemCount){
+        q.prepare("update table_gtm set "
+                  "type_name = '被清除', "
+                  "mark_name = '请重新编辑' "
+                  "where mark_id = ?;");
+        QVariantList ids;
+        for(int i=itemCount; i< listLen; ++i){
+            ids << this->list.takeAt(i);
+        }
+        q.addBindValue(ids);
+        if(!q.execBatch())
+            qDebug() << q.lastError();
+    }else if(listLen < itemCount){
+        int appendnum = itemCount - listLen;
+        q.prepare("insert into table_gtm "
+                  "(group_name, type_name, mark_number, mark_name)"
+                  "values(?, ?, -1, ?);");
+        QVariantList gname,tname,kname;
+        for(int i=0; i<appendnum; ++i){
+            gname << groupName;
+            tname << typeName;
+            kname << "Please Enter!";
+        }
+        q.addBindValue(gname);
+        q.addBindValue(tname);
+        q.addBindValue(kname);
+
+        if(!q.execBatch())
+            qDebug() << q.lastError();
+
+        q.prepare("select "
+                  "mark_id "
+                  "from table_gtm "
+                  "where (group_name = :gname) "
+                  "and   (type_name = :tname) "
+                  "and   (mark_number = -1);");
+        q.bindValue(":gname", groupName);
+        q.bindValue(":tname", typeName);
+        if(!q.exec())
+            qDebug() << q.lastError();
+        while (q.next()) {
+            this->list.append(q.value(0));
+        }
     }
 
-    QSqlQuery q2;
-    q2.prepare("insert into table_gtm "
-               "(group_name, type_name, mark_number, mark_name) "
-               "values(?,?,?,?)");
-    QVariantList gname, tname, marknum, markname;
+    q.prepare("update table_gtm set "
+              "mark_number = ?, "
+              "mark_name = ?  "
+              "where mark_id = ?;");
+    QVariantList marknum, markname, ids;
     for(int i=0; i<this->itemsmodel->rowCount(); ++i){
         auto item = this->itemsmodel->item(i);
-        gname   << groupName;
-        tname   << typeName;
         marknum << i;
         markname<< item->text();
+        ids << this->list.at(i);
     }
-    q2.addBindValue(gname);
-    q2.addBindValue(tname);
-    q2.addBindValue(marknum);
-    q2.addBindValue(markname);
+    q.addBindValue(marknum);
+    q.addBindValue(markname);
+    q.addBindValue(ids);
 
-    if(!q2.execBatch()){
-        qDebug() << q2.lastError();
+    if(!q.execBatch()){
+        qDebug() << q.lastError();
     }
     this->apply->setEnabled(false);
 }

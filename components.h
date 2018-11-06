@@ -13,7 +13,7 @@ namespace UIComp {
     {
         Q_OBJECT
     public:
-        explicit GTME();
+        explicit GTME(QWidget *parent=nullptr);
         virtual ~GTME() override;
 
 
@@ -28,6 +28,7 @@ namespace UIComp {
         QPushButton *const remove;
         QPushButton *const apply;
         QPushButton *const insertType;
+        QList<QVariant> list;
 
     private slots:
         void slot_groupsSelected(const QString &text);
