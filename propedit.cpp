@@ -20,7 +20,7 @@ PropEdit::PropEdit(QWidget * parent):
     apply(new QPushButton(tr("应用修改"))),
     level(new QComboBox),
     levelEdit(new QPushButton(tr("编辑等级"))),
-    descLine(new QLabel),
+    descLine(new QLabel(tr("::详细条目"))),
     value(new QLineEdit),
     descBlock(new QTextEdit)
 {
