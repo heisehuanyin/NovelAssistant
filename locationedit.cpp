@@ -258,7 +258,7 @@ void LocationEdit::slot_responseItemSelection(const QItemSelection &selected, co
         auto item = this->nickNames->item(nickNames->count()-1);
         item->setFlags(item->flags()|Qt::ItemIsEditable);
     }
-
+    this->apply->setEnabled(false);
 }
 
 void LocationEdit::slot_addNick()

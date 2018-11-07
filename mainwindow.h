@@ -29,6 +29,7 @@ private:
 
 private slots:
     void exit();
+    void slot_ResponseToolsAct(QAction* act);
 };
 
 #endif // MAINWINDOW_H

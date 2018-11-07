@@ -5,12 +5,12 @@
 #include <QObject>
 #include <QSqlDatabase>
 namespace Support {
-    class DatabaseInitialTool:public QObject
+    class DBInitTool:public QObject
     {
         Q_OBJECT
     public:
-        explicit DatabaseInitialTool();
-        virtual ~DatabaseInitialTool();
+        explicit DBInitTool();
+        virtual ~DBInitTool();
 
     private:
         bool createConnection();

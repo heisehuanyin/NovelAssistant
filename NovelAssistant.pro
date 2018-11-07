@@ -33,7 +33,9 @@ SOURCES += \
     components.cpp \
     locationedit.cpp \
     propedit.cpp \
-    skilledit.cpp
+    skilledit.cpp \
+    characteredit.cpp \
+    superdatetool.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -41,7 +43,9 @@ HEADERS += \
     components.h \
     locationedit.h \
     propedit.h \
-    skilledit.h
+    skilledit.h \
+    characteredit.h \
+    superdatetool.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

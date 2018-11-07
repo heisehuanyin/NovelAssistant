@@ -4,7 +4,7 @@
 
 using namespace Support;
 
-DatabaseInitialTool::DatabaseInitialTool()
+DBInitTool::DBInitTool()
 {
     this->createConnection();
     auto db = QSqlDatabase::database();
@@ -13,13 +13,13 @@ DatabaseInitialTool::DatabaseInitialTool()
         this->init_emptytable();
 }
 
-DatabaseInitialTool::~DatabaseInitialTool()
+DBInitTool::~DBInitTool()
 {
     auto db = QSqlDatabase::database();
     db.close();
 }
 
-bool DatabaseInitialTool::createConnection(){
+bool DBInitTool::createConnection(){
     auto db = QSqlDatabase::addDatabase("QSQLITE");
     db.setDatabaseName("NovelData.db");
     if(!db.open()){
@@ -29,7 +29,7 @@ bool DatabaseInitialTool::createConnection(){
     return x.exec("PRAGMA foreign_keys = ON;");
 }
 
-void DatabaseInitialTool::init_emptytable()
+void DBInitTool::init_emptytable()
 {
     QSqlQuery query(QSqlDatabase::database());
 
@@ -183,6 +183,28 @@ void DatabaseInitialTool::init_emptytable()
                "CONSTRAINT lc_pb_key FOREIGN KEY(prop)"
                " REFERENCES table_propbasic(prop_id)"
                " ON DELETE CASCADE);");
+    query.exec("create table table_timeformat ("
+               "id integer primary key autoincrement,"
+               "_index integer,"
+               "unit text,"
+               "base integer,"
+               "comment text"
+               ");");
+    query.exec("insert into table_timeformat "
+               "(_index, unit, base, comment)"
+               "values(0, '日', 1, '每个base数值都是以天为转换基础');");
+    query.exec("insert into table_timeformat "
+               "(_index, unit, base, comment)"
+               "values(1, '月', 30, '每个base数值都是以天为转换基础');");
+    query.exec("insert into table_timeformat "
+               "(_index, unit, base, comment)"
+               "values(2, '年', 365, '每个base数值都是以天为转换基础');");
+    query.exec("insert into table_timeformat "
+               "(_index, unit, base, comment)"
+               "values(3, '世纪', 36500, '每个base数值都是以天为转换基础');");
+    query.exec("insert into table_timeformat "
+               "(_index, unit, base, comment)"
+               "values(4, '元', 36500000, '每个base数值都是以天为转换基础');");
 }
 
 
