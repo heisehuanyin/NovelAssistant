@@ -13,13 +13,8 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
     Support::DBInitTool tool;
 
-    //MainWindow w ;
-    //w.show();
-
-    qDebug() << "size:"<< sizeof (qlonglong)<<endl;
-    Support::SuperDateTool x;
-    qDebug() << x.turn2Str(3679);
-    return 0;
+    MainWindow w ;
+    w.show();
 
     return a.exec();
 }
