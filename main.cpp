@@ -5,7 +5,6 @@
 #include "locationedit.h"
 #include "propedit.h"
 #include "skilledit.h"
-#include "superdatetool.h"
 #include <QDebug>
 
 int main(int argc, char *argv[])

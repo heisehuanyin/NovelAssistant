@@ -7,15 +7,15 @@
 #include "locationedit.h"
 #include "propedit.h"
 #include "skilledit.h"
+#include "eventnodeedit.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
       menubar(new QMenuBar(this)),
       toolsbar(new QToolBar(this)),
       mainSplit(new QSplitter(Qt::Horizontal, this)),
-      pjtSelect(new QToolBox(this)),
+      pjtSelect(new QTreeView(this)),
       editStack(new QTabWidget(this)),
-      //rightView(new QScrollArea(this)),
       rightSplit(new QSplitter(Qt::Vertical, this))
 {
     this->setMenuBar(this->menubar);
@@ -48,34 +48,19 @@ MainWindow::MainWindow(QWidget *parent)
     _tools->addAction(locationE);
     auto characterE = new QAction(tr("人物编辑"),_tools);
     _tools->addAction(characterE);
+    auto ev_nodeE = new QAction(tr("事件编辑"), _tools);
+    _tools->addAction(ev_nodeE);
     this->connect(_tools, &QMenu::triggered,
                   this,   &MainWindow::slot_ResponseToolsAct);
 
     this->addToolBar(toolsbar);
     this->setCentralWidget(this->mainSplit);
     this->mainSplit->addWidget(pjtSelect);
-    auto v = new QTextEdit;
-    v->setReadOnly(true);
-    pjtSelect->addItem(v, "One");
-    v = new QTextEdit;
-    v->setReadOnly(true);
-    pjtSelect->addItem(v, "Two");
-    v = new QTextEdit;
-    v->setReadOnly(true);
-    pjtSelect->addItem(v, "Three");
-    v = new QTextEdit;
-    v->setReadOnly(true);
-    pjtSelect->addItem(v, "Four");
-    v = new QTextEdit;
-    v->setReadOnly(true);
-    pjtSelect->addItem(v, "Five");
-    v = new QTextEdit;
-    v->setReadOnly(true);
-    pjtSelect->addItem(v, "Six");
 
 
 
     this->mainSplit->addWidget(editStack);
+    auto v = new QTextEdit;
     v = new QTextEdit;
     v->setReadOnly(true);
     editStack->addTab(v, "one");
@@ -136,6 +121,10 @@ void MainWindow::slot_ResponseToolsAct(QAction *act)
     }
     if(text == tr("人物编辑")){
         UIComp::CharacterEdit x(this);
+        x.exec();
+    }
+    if(text == tr("事件编辑")){
+        UIComp::EventnodeEdit x(this);
         x.exec();
     }
 }

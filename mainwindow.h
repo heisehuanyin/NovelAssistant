@@ -22,7 +22,7 @@ private:
     QMenuBar *const menubar;
     QToolBar *const toolsbar;
     QSplitter *const mainSplit;
-    QToolBox *const pjtSelect;
+    QTreeView *const pjtSelect;
     QTabWidget *const editStack;
     //QScrollArea *const rightView;
     QSplitter *const rightSplit;

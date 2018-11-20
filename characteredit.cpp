@@ -17,15 +17,15 @@ CharacterEdit::CharacterEdit(QWidget *const parent):
     removeItem(new QPushButton(tr("删除条目"))),
     apply(new QPushButton(tr("保存修改"))),
     birthDay(new QLineEdit),
-    birthDesc(new QLabel(tr("生于：?"))),
+    birthDesc(new QLabel(tr("生于："))),
     deathDay(new QLineEdit),
-    deathDesc(new QLabel(tr("卒于：?"))),
+    deathDesc(new QLabel(tr("卒于："))),
     nicknames(new QListWidget),
     addNick(new QPushButton(tr("增加昵称"))),
     removeNick(new QPushButton(tr("移除昵称"))),
     storyDisplay(new QListWidget),
     storyListModel(new QSqlQueryModel(this)),
-    editStory(new QPushButton(tr("编辑阅历"))),
+    editStory(new QPushButton(tr("履历编辑"))),
     comment(new QTextEdit)
 {
     this->setWindowTitle("角色编辑");
@@ -42,15 +42,15 @@ CharacterEdit::CharacterEdit(QWidget *const parent):
                   this,   &CharacterEdit::slot_responseItemSelection);
     this->table->setSelectionMode(QAbstractItemView::SingleSelection);
     this->table->setSelectionBehavior(QAbstractItemView::SelectRows);
-    grid->addWidget(this->addItem, 0, 3);
+    grid->addWidget(this->addItem, 0, 3, 1, 2);
     this->connect(this->addItem, &QPushButton::clicked,
                   this,          &CharacterEdit::slot_addItem);
-    grid->addWidget(this->removeItem, 0, 4);
-    //grid->addWidget(this->editStory, 0, 5);
-    grid->addWidget(this->apply, 0, 6);
+    grid->addWidget(this->removeItem, 0, 5, 1, 2);
+    grid->addWidget(this->apply, 0, 9, 1, 2);
+    grid->addWidget(this->editStory, 0, 7, 1, 2);
 
     auto group1(new QGroupBox(tr("昵称管理")));
-    grid->addWidget(group1, 1, 3, 8, 2);
+    grid->addWidget(group1, 4, 3, 6, 4);
     auto grid1(new QGridLayout);
     group1->setLayout(grid1);
     grid1->addWidget(this->addNick, 1, 0);
@@ -59,38 +59,27 @@ CharacterEdit::CharacterEdit(QWidget *const parent):
     this->nicknames->setSelectionMode(QAbstractItemView::SingleSelection);
 
     auto group2(new QGroupBox(tr("生卒时间")));
-    grid->addWidget(group2, 9, 3, 5, 2);
+    grid->addWidget(group2, 1, 3, 3, 4);
     auto grid2(new QGridLayout);
     group2->setLayout(grid2);
     grid2->addWidget(this->birthDesc);
-    grid2->addWidget(this->birthDay, 1, 0);
-    grid2->addWidget(this->deathDesc, 2, 0);
-    grid2->addWidget(this->deathDay, 3, 0);
+    grid2->addWidget(this->birthDay, 0, 1, 1, 3);
+    grid2->addWidget(this->deathDesc, 1, 0);
+    grid2->addWidget(this->deathDay, 1, 1, 1, 3);
 
     auto group3(new QGroupBox(tr("阅历表")));
-    grid->addWidget(group3, 1, 5, 8, 2);
+    grid->addWidget(group3, 1, 7, 13, 4);
     auto grid3(new QGridLayout);
     group3->setLayout(grid3);
     grid3->addWidget(this->storyDisplay,0,0,1,2);
     this->storyDisplay->setSelectionMode(QAbstractItemView::SingleSelection);
-    grid3->addWidget(this->editStory, 1, 1);
 
     auto group4(new QGroupBox(tr("备注")));
-    grid->addWidget(group4, 9, 5, 5, 2);
+    grid->addWidget(group4, 10, 3, 4, 4);
     auto grid4(new QGridLayout);
     group4->setLayout(grid4);
     grid4->addWidget(this->comment);
 
-    grid->setRowMinimumHeight(9, 20);
-    grid->setRowStretch(9,0);
-    grid->setRowMinimumHeight(10, 20);
-    grid->setRowStretch(10,0);
-    grid->setRowMinimumHeight(11, 20);
-    grid->setRowStretch(11,0);
-    grid->setRowMinimumHeight(12, 20);
-    grid->setRowStretch(12,0);
-    grid->setRowMinimumHeight(13, 20);
-    grid->setRowStretch(13,0);
 }
 
 CharacterEdit::~CharacterEdit()

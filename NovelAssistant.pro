@@ -35,7 +35,9 @@ SOURCES += \
     propedit.cpp \
     skilledit.cpp \
     characteredit.cpp \
-    superdatetool.cpp
+    superdatetool.cpp \
+    eventnodeedit.cpp \
+    hiddenidmodel.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -45,7 +47,9 @@ HEADERS += \
     propedit.h \
     skilledit.h \
     characteredit.h \
-    superdatetool.h
+    superdatetool.h \
+    eventnodeedit.h \
+    hiddedidmodel.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

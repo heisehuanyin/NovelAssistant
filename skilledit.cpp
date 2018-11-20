@@ -12,6 +12,7 @@ using namespace UIComp;
 
 SkillEdit::SkillEdit(QWidget * parent):
     QDialog (parent),
+    typeLimit(new QComboBox),
     input(new QLineEdit ),
     table(new QTableView ),
     tableModel(new QSqlQueryModel(this)),
@@ -28,9 +29,12 @@ SkillEdit::SkillEdit(QWidget * parent):
     auto grid(new QGridLayout);
     this->setLayout(grid);
 
-    grid->addWidget(this->input, 0, 0, 1, 3);
+    grid->addWidget(this->typeLimit);
+    this->connect(this->typeLimit, &QComboBox::currentTextChanged,
+                  this,            &SkillEdit::slot_clearStatus);
+    grid->addWidget(this->input, 0, 1, 1, 2);
     this->connect(this->input, &QLineEdit::textChanged,
-                  this,        &SkillEdit::slot_queryProps);
+                  this,        &SkillEdit::slot_querySkills);
     grid->addWidget(this->addItem, 0, 3);
     this->connect(this->addItem,&QPushButton::clicked,
                   this,        &SkillEdit::slot_addItem);
@@ -50,17 +54,15 @@ SkillEdit::SkillEdit(QWidget * parent):
     this->connect(smodel, &QItemSelectionModel::selectionChanged,
                   this,   &SkillEdit::slot_responseItemSelection);
     auto x = new QLabel(tr("等级:"));
-    //x->setAlignment(Qt::AlignCenter | Qt::AlignVCenter);
     grid->addWidget(x, 1, 3);
-    grid->addWidget(this->level, 1, 4, 1, 2);
+    grid->addWidget(this->level, 1, 4);
     this->connect(this->level, &QComboBox::currentTextChanged,
                   this,        &SkillEdit::slot_statusChanged);
-    grid->addWidget(this->levelEdit, 2, 5);
+    grid->addWidget(this->levelEdit, 1, 5);
     this->connect(this->levelEdit, &QPushButton::clicked,
                   this,            &SkillEdit::slot_levelEdit);
     grid->addWidget(this->descLine, 2, 3, 1, 2);
     x = new QLabel(tr("数值:"));
-    //x->setAlignment(Qt::AlignCenter | Qt::AlignVCenter);
     grid->addWidget(x, 3, 3);
     grid->addWidget(this->value, 3, 4, 1, 2);
     this->connect(this->value, &QLineEdit::textEdited,
@@ -73,6 +75,15 @@ SkillEdit::SkillEdit(QWidget * parent):
     auto grid2(new QGridLayout);
     grid2->addWidget(this->descBlock);
     group->setLayout(grid2);
+
+    QSqlQuery q;
+    q.exec("select "
+           "distinct type_name "
+           "from table_gtm "
+           "where group_name = '技能级别';");
+    while (q.next()) {
+        this->typeLimit->addItem(q.value(0).toString());
+    }
 }
 
 SkillEdit::~SkillEdit()
@@ -80,7 +91,7 @@ SkillEdit::~SkillEdit()
 
 }
 
-void SkillEdit::slot_queryProps(const QString &text)
+void SkillEdit::slot_querySkills(const QString &text)
 {
     this->tableModel->clear();
     this->addItem->setEnabled(false);
@@ -88,24 +99,36 @@ void SkillEdit::slot_queryProps(const QString &text)
     this->apply->setEnabled(false);
     if(text == QString())
         return;
+
+    QString typeStr = this->typeLimit->currentText();
+    if(typeStr == QString()){
+        QMessageBox::critical(this,"TYPE ERROR","数据库中没有“技能级别-分类”定义！");
+        return;
+    }
     QString execStr = "select "
-                      "g.type_name, "
-                      "s.name, "
-                      "s.skill_id "
-                      "from table_skilllist s inner join table_gtm g "
-                      "on s.mark = g.mark_id ";
+                      "st.name, "
+                      "gt.mark_name "
+                      "from table_skilllist st inner join table_gtm gt "
+                      "on st.mark=gt.mark_id "
+                      "where "
+                      "(st.mark in (select "
+                      "mark_id "
+                      "from table_gtm "
+                      "where (group_name='技能级别') "
+                      "and   (type_name =':tname'))"
+                      ")";
     if(text != "*"){
-        execStr += "where s.name like '%:name%' ";
+        execStr += "and (st.name like '%:name%') ";
         execStr.replace(":name", text);
     }
-    execStr += "order by g.type_name;";
+    execStr.replace(":tname", typeStr);
+    execStr += "order by gt.mark_number;";
 
     this->tableModel->setQuery(execStr);
     if (tableModel->lastError().isValid())
         qDebug() << tableModel->lastError();
-    this->tableModel->setHeaderData(0,Qt::Horizontal, "类别");
-    this->tableModel->setHeaderData(1,Qt::Horizontal, "名称");
-    this->tableModel->setHeaderData(2,Qt::Horizontal, "Innr_ID");
+    this->tableModel->setHeaderData(0,Qt::Horizontal, "名称");
+    this->tableModel->setHeaderData(1,Qt::Horizontal, "等级");
 
     if(this->tableModel->rowCount() == 0){
         this->addItem->setEnabled(true);
@@ -117,27 +140,16 @@ void SkillEdit::slot_queryProps(const QString &text)
 void SkillEdit::slot_addItem()
 {
     QSqlQuery q;
-    q.exec("select "
-           "mark_id "
+    q.exec("select mark_id "
            "from table_gtm "
-           "where (type_name = '被清除') "
-           "and   (mark_name = '请重新编辑');");
+           "where (group_name = '技能级别') "
+           "group by type_name "
+           "having (mark_number=min(mark_number))"
+           "and    (type_name  ='"+this->typeLimit->currentText()+"');");
     QVariant id;
-    if(q.next()){
-        id = q.value(0);
-    }else{
-        q.exec("insert into table_gtm "
-               "(group_name, type_name, mark_number, mark_name)"
-               "values('技能等级','被清除', 0, '请重新编辑');");
-        q.exec("select "
-               "mark_id "
-               "from table_gtm "
-               "where (type_name = '被清除') "
-               "and   (mark_name = '请重新编辑');");
-        q.next();
-        id = q.value(0);
-    }
-
+    if(!q.next())
+        return;
+    id = q.value(0);
 
     q.prepare( "insert into table_skilllist "
                "(name, skill_desc, mark, number) "
@@ -150,46 +162,68 @@ void SkillEdit::slot_addItem()
     this->input->setText(xname);
 }
 
+void SkillEdit::slot_clearStatus()
+{
+    this->tableModel->clear();
+    this->input->clear();
+    this->level->clear();
+    this->descLine->clear();
+    this->value->clear();
+    this->descBlock->clear();
+    this->apply->setEnabled(false);
+}
+
 void SkillEdit::slot_responseItemSelection(const QItemSelection &, const QItemSelection &)
 {
     auto index = this->table->currentIndex();
     if(!index.isValid())
         return;
-    auto id = this->tableModel->data(index.sibling(index.row(), 2)).toString();
+    auto name = this->tableModel->data(index.sibling(index.row(), 0)).toString();
     QSqlQuery q;
     q.prepare("select "
-              "skill_desc,"
-              "mark, "
-              "number "
+              "skill_desc, mark, number "
               "from table_skilllist "
-              "where skill_id = :id;");
-    q.bindValue(":id", id);
-    q.exec();
+              "where (name = :name)"
+              "and   (mark in ("
+              "select "
+              "mark_id "
+              "from table_gtm "
+              "where (group_name='技能级别') "
+              "and   (type_name = :tname) "
+              "));");
+    q.bindValue(":name", name);
+    q.bindValue(":tname", this->typeLimit->currentText());
+    if(!q.exec()){
+        qDebug() << q.lastError();
+        return;
+    }
 
-    q.next();
+    if(!q.next()){
+        QMessageBox::critical(this, "ERROR", "空集");
+        return;
+    }
     auto number = q.value(2).toString();
     this->value->setText(number);
     auto skill_desc = q.value(0).toString();
     this->descBlock->setText(skill_desc);
     auto mark = q.value(1);
-    QString sqlStr = "select "
-                     "mark_id, "
-                     "group_name, "
-                     "type_name, "
-                     "mark_number,"
-                     "mark_name "
-                     "from table_gtm "
-                     "where group_name = '技能级别' "
-                     "order by type_name;";
+    q.prepare("select "
+              "mark_id, "
+              "mark_number "
+              "from table_gtm "
+              "where (group_name = '技能级别') "
+              "and   (type_name  = :tname)"
+              "order by mark_number;");
+    q.bindValue(":tname", this->typeLimit->currentText());
 
-    if(!q.exec(sqlStr))
+    if(!q.exec()){
         qDebug() << q.lastError();
+        return;
+    }
     this->level->clear();
     while (q.next()) {
-        auto id = q.value(0).toLongLong();
-        auto item = "(" + QString("%1").arg(q.value(3).toLongLong())
-                   +")" + q.value(2).toString() + ":"
-                   + q.value(4).toString();
+        auto id = q.value(0);
+        auto item = q.value(1).toString();
         this->level->addItem(item, id);
     }
     if((!mark.isNull()) || (mark.isValid())){
@@ -203,7 +237,6 @@ void SkillEdit::slot_responseItemSelection(const QItemSelection &, const QItemSe
     }
     q.prepare("select "
               "type_name, "
-              "mark_number,"
               "mark_name "
               "from table_gtm "
               "where mark_id = :id;");
@@ -211,13 +244,13 @@ void SkillEdit::slot_responseItemSelection(const QItemSelection &, const QItemSe
     if(!q.exec()){
         qDebug() << q.lastError();
     }
-    q.next();
-    this->descLine->setText("::技能级别>>"
-                            "[" + q.value(1).toString()+ "]"
-                            + q.value(0).toString() + ":"
-                            + q.value(2).toString());
+    if(q.next())
+        this->descLine->setText("::技能级别>>"
+                                + q.value(0).toString() + ":"
+                                + q.value(1).toString());
 
     this->apply->setEnabled(false);
+    this->removeItem->setEnabled(true);
 }
 
 void SkillEdit::slot_responseApply()
@@ -225,19 +258,28 @@ void SkillEdit::slot_responseApply()
     auto index = this->table->currentIndex();
     if(!index.isValid())
         return;
-    auto id = this->tableModel->data(index.sibling(index.row(), 2)).toString();
+
+    auto name = this->tableModel->data(index.sibling(index.row(), 0)).toString();
+    QSqlQuery q;
     QString exeStr = "update table_skilllist "
                      "set "
                      "mark = :mark, "
                      "number = :number,"
                      "skill_desc = :desc "
-                     "where skill_id = :id ;";
-    QSqlQuery q;
+                     "where (name = :name)"
+                     "and   (mark in ("
+                     "select "
+                     "mark_id "
+                     "from table_gtm "
+                     "where (group_name='技能级别') "
+                     "and   (type_name = :tname) "
+                     "));";
     q.prepare(exeStr);
-    q.bindValue(":id", id.toLongLong());
     q.bindValue(":mark", this->level->currentData());
     q.bindValue(":number", this->value->text().toLongLong());
     q.bindValue(":desc", this->descBlock->toPlainText());
+    q.bindValue(":name", name);
+    q.bindValue(":tname", this->typeLimit->currentText());
 
     if(!q.exec())
         qDebug() << q.lastError();
@@ -251,8 +293,20 @@ void SkillEdit::slot_responseApply()
 void SkillEdit::slot_statusChanged()
 {
     this->apply->setEnabled(true);
-    auto content = this->level->currentText();
-    content.replace("(","::技能级别>>[").replace(")","]");
+    auto id = this->level->currentData();
+    if((!id.isValid()) || (id.isNull()))
+        return;
+    QSqlQuery q;
+    q.prepare("select group_name, type_name, mark_name "
+              "from table_gtm "
+              "where mark_id = :id;");
+    q.bindValue(":id",id);
+    if(!q.exec())
+        return;
+    q.next();
+    QString content = "::" + q.value(0).toString()
+                    + ">>" + q.value(1).toString()
+                    + ":"  + q.value(2).toString();
     this->descLine->setText(content);
 }
 

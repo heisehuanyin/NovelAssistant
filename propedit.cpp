@@ -12,6 +12,7 @@ using namespace UIComp;
 
 PropEdit::PropEdit(QWidget * parent):
     QDialog (parent),
+    typeLimit(new QComboBox),
     input(new QLineEdit ),
     table(new QTableView ),
     tableModel(new QSqlQueryModel(this)),
@@ -28,7 +29,10 @@ PropEdit::PropEdit(QWidget * parent):
     auto grid(new QGridLayout);
     this->setLayout(grid);
 
-    grid->addWidget(this->input, 0, 0, 1, 3);
+    grid->addWidget(this->typeLimit);
+    this->connect(this->typeLimit, &QComboBox::currentTextChanged,
+                  this,            &PropEdit::slot_clearStatus);
+    grid->addWidget(this->input, 0, 1, 1, 2);
     this->connect(this->input, &QLineEdit::textChanged,
                   this,        &PropEdit::slot_queryProps);
     grid->addWidget(this->addItem, 0, 3);
@@ -50,17 +54,15 @@ PropEdit::PropEdit(QWidget * parent):
     this->connect(smodel, &QItemSelectionModel::selectionChanged,
                   this,   &PropEdit::slot_responseItemSelection);
     auto x = new QLabel(tr("等级:"));
-    //x->setAlignment(Qt::AlignCenter | Qt::AlignVCenter);
     grid->addWidget(x, 1, 3);
-    grid->addWidget(this->level, 1, 4, 1, 2);
+    grid->addWidget(this->level, 1, 4);
     this->connect(this->level, &QComboBox::currentTextChanged,
                   this,        &PropEdit::slot_statusChanged);
-    grid->addWidget(this->levelEdit, 2, 5);
+    grid->addWidget(this->levelEdit, 1, 5);
     this->connect(this->levelEdit, &QPushButton::clicked,
                   this,            &PropEdit::slot_levelEdit);
     grid->addWidget(this->descLine, 2, 3, 1, 2);
     x = new QLabel(tr("数值:"));
-    //x->setAlignment(Qt::AlignCenter | Qt::AlignVCenter);
     grid->addWidget(x, 3, 3);
     grid->addWidget(this->value, 3, 4, 1, 2);
     this->connect(this->value, &QLineEdit::textEdited,
@@ -73,6 +75,15 @@ PropEdit::PropEdit(QWidget * parent):
     auto grid2(new QGridLayout);
     grid2->addWidget(this->descBlock);
     group->setLayout(grid2);
+
+    QSqlQuery q;
+    q.exec("select "
+           "distinct type_name "
+           "from table_gtm "
+           "where group_name='道具级别';");
+    while (q.next()) {
+        this->typeLimit->addItem(q.value(0).toString());
+    }
 }
 
 PropEdit::~PropEdit()
@@ -88,21 +99,37 @@ void PropEdit::slot_queryProps(const QString &text)
     this->apply->setEnabled(false);
     if(text == QString())
         return;
+
+    QString typeStr = this->typeLimit->currentText();
+    if(typeStr == QString()){
+        QMessageBox::critical(this,"TYPE ERROR","数据库中没有“道具级别-分类”定义！");
+        return;
+    }
+
+
     QString execStr = "select "
-                      "name, "
-                      "prop_id "
-                      "from table_propbasic ";
+                      "pt.name, "
+                      "gt.mark_name "
+                      "from table_propbasic pt inner join table_gtm gt "
+                      "on pt.mark = gt.mark_id "
+                      "where (pt.mark in ("
+                      "select mark_id "
+                      "from table_gtm "
+                      "where (group_name='道具级别')"
+                      "and   (type_name =':tname')"
+                      ")) ";
     if(text != "*"){
-        execStr += "where name like '%:name%' ";
+        execStr += "and (name like '%:name%') ";
         execStr.replace(":name", text);
     }
-    execStr += "order by prop_id;";
+    execStr.replace(":tname",typeStr);
+    execStr += "order by gt.mark_number;";
 
     this->tableModel->setQuery(execStr);
     if (tableModel->lastError().isValid())
         qDebug() << tableModel->lastError();
     this->tableModel->setHeaderData(0,Qt::Horizontal, "名称");
-    this->tableModel->setHeaderData(1,Qt::Horizontal, "Innr_ID");
+    this->tableModel->setHeaderData(1,Qt::Horizontal, "等级");
 
     if(this->tableModel->rowCount() == 0){
         this->addItem->setEnabled(true);
@@ -114,14 +141,37 @@ void PropEdit::slot_queryProps(const QString &text)
 void PropEdit::slot_addItem()
 {
     QSqlQuery q;
+    q.exec("select mark_id "
+           "from table_gtm "
+           "where (group_name = '道具级别') "
+           "group by type_name "
+           "having (mark_number=min(mark_number))"
+           "and    (type_name  ='"+this->typeLimit->currentText()+"');");
+    QVariant id;
+    if(!q.next())
+        return;
+    id = q.value(0);
+
     q.prepare( "insert into table_propbasic "
-               "(name, prop_desc, number) "
-               "values(:name, '待输入', 0);");
+               "(name, prop_desc, mark, number) "
+               "values(:name, '待输入', :mark, 0);");
     q.bindValue(":name",this->input->text());
+    q.bindValue(":mark", id);
     q.exec();
     auto xname = this->input->text();
     this->input->setText("");
     this->input->setText(xname);
+}
+
+void PropEdit::slot_clearStatus()
+{
+    this->tableModel->clear();
+    this->input->clear();
+    this->level->clear();
+    this->descLine->clear();
+    this->value->clear();
+    this->descBlock->clear();
+    this->apply->setEnabled(false);
 }
 
 void PropEdit::slot_responseItemSelection(const QItemSelection &, const QItemSelection &)
@@ -129,41 +179,52 @@ void PropEdit::slot_responseItemSelection(const QItemSelection &, const QItemSel
     auto index = this->table->currentIndex();
     if(!index.isValid())
         return;
-    auto id = this->tableModel->data(index.sibling(index.row(), 1)).toString();
+    auto name = this->tableModel->data(index.sibling(index.row(), 0)).toString();
     QSqlQuery q;
     q.prepare("select "
-              "prop_desc,"
-              "mark, "
-              "number "
+              "prop_desc, mark, number "
               "from table_propbasic "
-              "where prop_id = :id;");
-    q.bindValue(":id", id);
-    q.exec();
+              "where (name = :name)"
+              "and   (mark in ("
+              "select "
+              "mark_id "
+              "from table_gtm "
+              "where (group_name='道具级别') "
+              "and   (type_name = :tname) "
+              "));");
+    q.bindValue(":name", name);
+    q.bindValue(":tname", this->typeLimit->currentText());
+    if(!q.exec()){
+        qDebug() << q.lastError();
+        return;
+    }
 
-    q.next();
+    if(!q.next()){
+        QMessageBox::critical(this, "ERROR", "空集");
+        return;
+    }
     auto number = q.value(2).toString();
     this->value->setText(number);
     auto prop_desc = q.value(0).toString();
     this->descBlock->setText(prop_desc);
     auto mark = q.value(1);
-    QString sqlStr = "select "
-                     "mark_id, "
-                     "group_name, "
-                     "type_name, "
-                     "mark_number,"
-                     "mark_name "
-                     "from table_gtm "
-                     "where group_name = '道具级别' "
-                     "order by type_name;";
+    q.prepare("select "
+              "mark_id, "
+              "mark_number "
+              "from table_gtm "
+              "where (group_name = '道具级别') "
+              "and   (type_name  = :tname)"
+              "order by mark_number;");
+    q.bindValue(":tname", this->typeLimit->currentText());
 
-    if(!q.exec(sqlStr))
+    if(!q.exec()){
         qDebug() << q.lastError();
+        return;
+    }
     this->level->clear();
     while (q.next()) {
-        auto id = q.value(0).toLongLong();
-        auto item = "(" + QString("%1").arg(q.value(3).toLongLong())
-                   +")" + q.value(2).toString() + ":"
-                   + q.value(4).toString();
+        auto id = q.value(0);
+        auto item = q.value(1).toString();
         this->level->addItem(item, id);
     }
     if((!mark.isNull()) || (mark.isValid())){
@@ -177,21 +238,20 @@ void PropEdit::slot_responseItemSelection(const QItemSelection &, const QItemSel
     }
     q.prepare("select "
               "type_name, "
-              "mark_number,"
               "mark_name "
               "from table_gtm "
               "where mark_id = :id;");
-    q.bindValue(":id",mark);
+    q.bindValue(":id", mark);
     if(!q.exec()){
         qDebug() << q.lastError();
     }
-    q.next();
-    this->descLine->setText("::道具级别>>"
-                            "[" + q.value(1).toString()+ "]"
-                            + q.value(0).toString() + ":"
-                            + q.value(2).toString());
+    if(q.next())
+        this->descLine->setText("::道具级别>>"
+                                + q.value(0).toString() + ":"
+                                + q.value(1).toString());
 
     this->apply->setEnabled(false);
+    this->removeItem->setEnabled(true);
 }
 
 void PropEdit::slot_responseApply()
@@ -199,31 +259,55 @@ void PropEdit::slot_responseApply()
     auto index = this->table->currentIndex();
     if(!index.isValid())
         return;
-    auto id = this->tableModel->data(index.sibling(index.row(), 1)).toString();
+
+    auto name = this->tableModel->data(index.sibling(index.row(), 0)).toString();
+    QSqlQuery q;
     QString exeStr = "update table_propbasic "
                      "set "
                      "mark = :mark, "
                      "number = :number,"
                      "prop_desc = :desc "
-                     "where prop_id = :id ;";
-    QSqlQuery q;
+                     "where (name = :name)"
+                     "and   (mark in ("
+                     "select "
+                     "mark_id "
+                     "from table_gtm "
+                     "where (group_name='道具级别') "
+                     "and   (type_name = :tname) "
+                     "));";
     q.prepare(exeStr);
-    q.bindValue(":id", id.toLongLong());
     q.bindValue(":mark", this->level->currentData());
     q.bindValue(":number", this->value->text().toLongLong());
     q.bindValue(":desc", this->descBlock->toPlainText());
+    q.bindValue(":name", name);
+    q.bindValue(":tname", this->typeLimit->currentText());
 
     if(!q.exec())
         qDebug() << q.lastError();
 
     this->apply->setEnabled(false);
+    auto xname = this->input->text();
+    this->input->setText("");
+    this->input->setText(xname);
 }
 
 void PropEdit::slot_statusChanged()
 {
     this->apply->setEnabled(true);
-    auto content = this->level->currentText();
-    content.replace("(","::道具级别>>[").replace(")","]");
+    auto id = this->level->currentData();
+    if((!id.isValid()) || (id.isNull()))
+        return;
+    QSqlQuery q;
+    q.prepare("select group_name, type_name, mark_name "
+              "from table_gtm "
+              "where mark_id = :id;");
+    q.bindValue(":id",id);
+    if(!q.exec())
+        return;
+    q.next();
+    QString content = "::" + q.value(0).toString()
+                    + ">>" + q.value(1).toString()
+                    + ":"  + q.value(2).toString();
     this->descLine->setText(content);
 }
 

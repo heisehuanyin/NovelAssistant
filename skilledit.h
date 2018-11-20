@@ -20,6 +20,7 @@ namespace UIComp {
         virtual ~SkillEdit();
 
     private:
+        QComboBox *const typeLimit;
         QLineEdit *const input;
         QTableView *const table;
         QSqlQueryModel *const tableModel;
@@ -33,8 +34,9 @@ namespace UIComp {
         QTextEdit *const descBlock;
 
     private slots:
-        void slot_queryProps(const QString &text);
+        void slot_querySkills(const QString &text);
         void slot_addItem();
+        void slot_clearStatus();
         void slot_responseItemSelection(const QItemSelection &, const QItemSelection &);
         void slot_responseApply();
         void slot_statusChanged();

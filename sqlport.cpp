@@ -21,7 +21,7 @@ DBInitTool::~DBInitTool()
 
 bool DBInitTool::createConnection(){
     auto db = QSqlDatabase::addDatabase("QSQLITE");
-    db.setDatabaseName("NovelData.db");
+    db.setDatabaseName("DO_NOT_TOUCH_ANY_FILE.db");
     if(!db.open()){
         return false;
     }
@@ -188,23 +188,24 @@ void DBInitTool::init_emptytable()
                "_index integer,"
                "unit text,"
                "base integer,"
+               "not_0 text,"
                "comment text"
                ");");
     query.exec("insert into table_timeformat "
-               "(_index, unit, base, comment)"
-               "values(0, '日', 1, '每个base数值都是以天为转换基础');");
+               "(_index, unit, base, not_0, comment)"
+               "values(0, '日', 1, 'yes', '每个base数值都是以天为转换基础');");
+    query.exec("insert into table_timeformat "
+               "(_index, unit, base, not_0, comment)"
+               "values(1, '月', 30, 'yes', '每个base数值都是以天为转换基础');");
     query.exec("insert into table_timeformat "
                "(_index, unit, base, comment)"
-               "values(1, '月', 30, '每个base数值都是以天为转换基础');");
+               "values(2, '年', 360, '每个base数值都是以天为转换基础');");
     query.exec("insert into table_timeformat "
                "(_index, unit, base, comment)"
-               "values(2, '年', 365, '每个base数值都是以天为转换基础');");
+               "values(3, '纪', 36000, '每个base数值都是以天为转换基础');");
     query.exec("insert into table_timeformat "
                "(_index, unit, base, comment)"
-               "values(3, '世纪', 36500, '每个base数值都是以天为转换基础');");
-    query.exec("insert into table_timeformat "
-               "(_index, unit, base, comment)"
-               "values(4, '元', 36500000, '每个base数值都是以天为转换基础');");
+               "values(4, '元', 36000000, '每个base数值都是以天为转换基础');");
 }
 
 
