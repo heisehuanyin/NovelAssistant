@@ -16,11 +16,12 @@ EventnodeEdit::EventnodeEdit(QWidget *parent):
     removeItem(new QPushButton(tr("删除"))),
     apply(new QPushButton(tr("应用变更"))),
     eventTable(new QTableView),
-    eventModel(new Support::HiddenIdModel),
+    eventModel(new Support::HiddenIdModel(true)),
     birthDay(new QPushButton(tr("xxxxx年xx月xx日"))),
     deathDay(new QPushButton(tr("xxxxx年xx月xx日"))),
     birthStatus(new Support::SuperDateTool(this)),
     deathStatus(new Support::SuperDateTool(this)),
+    evNameInput(new QLineEdit),
     evNodeDesc(new QTextEdit),
     effect(new QGroupBox(tr("区域性影响"))),
     localInput(new QLineEdit),
@@ -68,10 +69,12 @@ EventnodeEdit::EventnodeEdit(QWidget *parent):
     bLayout->setRowMinimumHeight(3, 20);
     bLayout->setRowStretch(3,0);
 
-    auto evndesc(new QGroupBox(tr("事件阶段性描述")));
-    auto _layout(new QHBoxLayout);
+    auto evndesc(new QGroupBox(tr("事件阶段描述")));
+    auto _layout(new QGridLayout);
     evndesc->setLayout(_layout);
-    _layout->addWidget(this->evNodeDesc);
+    _layout->addWidget(new QLabel(tr("名称：")));
+    _layout->addWidget(this->evNameInput, 0, 1, 1, 4);
+    _layout->addWidget(this->evNodeDesc, 1, 0, 4, 5);
     bLayout->addWidget(evndesc, 4, 4, 7, 4);
 
     effect->setCheckable(true);
@@ -179,7 +182,8 @@ void EventnodeEdit::slot_targetItemChanged(const QItemSelection &, const QItemSe
     q.prepare("select "
               "begin_time, "
               "end_time, "
-              "node_desc "
+              "node_desc, "
+              "node_name "
               "from table_eventnodeeffect "
               "where ev_node_id = :id;");
     q.bindValue(":id", idvar);
@@ -191,6 +195,7 @@ void EventnodeEdit::slot_targetItemChanged(const QItemSelection &, const QItemSe
     q.next();
     this->evNodeDesc->setText(q.value(2).toString());
     this->birthStatus->resetDate(q.value(0).toLongLong());
+    this->evNameInput->setText(q.value(3).toString());
     auto str1 = birthStatus->toString();
     this->birthDay->setText(str1);
     this->deathStatus->resetDate(q.value(1).toLongLong());
@@ -201,7 +206,19 @@ void EventnodeEdit::slot_targetItemChanged(const QItemSelection &, const QItemSe
     this->deathDay->setEnabled(true);
 
     q.prepare("select "
-              "");
+              "event_node "
+              "from table_locationchange "
+              "where event_node = :eNode;");
+    q.bindValue(":eNode", idvar);
+
+    if(!q.exec()){
+        qDebug() << q.lastError();
+        return;
+    }
+    while (q.next()) {
+        this->effect->setChecked(true);
+        break;
+    }
 }
 
 void EventnodeEdit::slot_editBeginTime()

@@ -29,15 +29,8 @@ namespace Support {
         void setHorizontalHeader(int index, QString header);
 
         /**
-         * @brief 设置指定列为属性为可编辑
-         * @param index 指定列序号
-         * @param sqlStatement 写入用到的sql语句
-         * @param holder4DisplayRole sql语句中的占位符
-         */
-        void setColumnModified(int index, QString sqlStatement, QString holder4DisplayRole);
-
-        /**
-         * @brief 首先执行本函数获取结果，后执行setquery，结果决定结果视图中每条记录的选定状态，传入执行的语句执行结果第一个值必须是记录id。
+         * @brief 首先执行本函数获取结果，后执行setquery，结果决定结果视图中每条记录的选定状态，
+         * 传入执行的语句执行结果第一个值必须是记录的id，而且此id与setQuery隐藏的id相同。
          * 本函数执行结果可以重复利用，每次使用setquery获得的记录都会使用此结果，执行一次本函数，结果集刷新一次。
          */
         void setSelectedDetermine(QString sqlStatement);
@@ -69,8 +62,6 @@ namespace Support {
         QList<QString> headers;
         QList<QVariant> selectedIDs;
         bool checkable;
-        //columnindex sqlstatement placeholder
-        QHash<int,QPair<QString,QString>> modifySymbo;
 
 
         // QAbstractItemModel interface

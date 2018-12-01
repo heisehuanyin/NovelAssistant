@@ -65,11 +65,6 @@ void HiddenIdModel::setHorizontalHeader(int index, QString header)
     this->endResetModel();
 }
 
-void HiddenIdModel::setColumnModified(int index, QString sqlStatement, QString holder4DisplayRole)
-{
-    this->modifySymbo.insert(index, QPair<QString,QString>(sqlStatement, holder4DisplayRole));
-}
-
 void HiddenIdModel::setSelectedDetermine(QString sqlStatement)
 {
     this->beginResetModel();
@@ -83,21 +78,24 @@ void HiddenIdModel::setSelectedDetermine(QString sqlStatement)
     while (q.next()) {
         this->selectedIDs << q.value(0);
     }
-
+    for(int i=0; i<this->contents.size(); ++i){
+        auto row = this->contents.at(i);
+        auto id = row.first.first;
+        QPair<QVariant, bool> val;
+        if(this->selectedIDs.contains(id)){
+            val = QPair<QVariant, bool>(row.first.first,true);
+        }else{
+            val = QPair<QVariant, bool>(row.first.first,false);
+        }
+        this->contents.replace(i, QPair<QPair<QVariant,bool>,QList<QVariant>>(val,row.second));
+    }
 
     this->endResetModel();
 }
 
 QList<QVariant> HiddenIdModel::selectedRecordIDs()
 {
-    QList<QVariant> rtn;
-    QPair<QPair<QVariant,bool>,QList<QVariant>> row;
-    foreach (row, this->contents) {
-        auto prefix = row.first;
-        if(prefix.second)
-            rtn << prefix.first;
-    }
-    return rtn;
+    return this->selectedIDs;
 }
 
 QVariant HiddenIdModel::oppositeID(QModelIndex &index)
@@ -131,8 +129,6 @@ Qt::ItemFlags HiddenIdModel::flags(const QModelIndex &index) const
 
     if(this->checkable && index.column() == 0)
         ret |= Qt::ItemIsUserCheckable;
-    if(this->modifySymbo.contains(index.column()))
-        ret |= Qt::ItemIsEditable;
 
     return ret | QAbstractItemModel::flags(index);
 }
@@ -177,26 +173,14 @@ bool HiddenIdModel::setData(const QModelIndex &index, const QVariant &value, int
     if(this->checkable && role == Qt::CheckStateRole && index.column() == 0){
         auto row = this->contents.at(index.row());
         auto val(QPair<QVariant, bool>(row.first.first,value.toBool()));
-        qSwap(row.first, val);
+        this->contents.replace(index.row(), QPair<QPair<QVariant,bool>,QList<QVariant>>(val,row.second));
         emit this->dataChanged(index, index);
         if(value.toBool()){
             emit this->signal_recordHasBeenSelected(row.first.first.toLongLong());
+            this->selectedIDs.append(row.first.first);
         }else{
             emit this->signal_recordHasBeenDeselected(row.first.first.toLongLong());
-        }
-    }
-    if(role == Qt::DisplayRole && this->modifySymbo.contains(index.column())){
-        auto row = this->contents.at(index.row());
-        auto newRow = row.second;
-        newRow.replace(index.column(), value);
-        qSwap(row.second, newRow);
-        emit this->dataChanged(index,index);
-        auto modifyStatement = this->modifySymbo.value(index.column());
-        QSqlQuery q;
-        q.prepare(modifyStatement.first);
-        q.bindValue(modifyStatement.second, value);
-        if(!q.exec()){
-            qDebug() << q.lastError();
+            this->selectedIDs.removeOne(row.first.first);
         }
     }
     return true;

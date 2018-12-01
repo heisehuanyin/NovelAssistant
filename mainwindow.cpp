@@ -60,6 +60,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 
     this->mainSplit->addWidget(editStack);
+    this->editStack->setTabsClosable(true);
     auto v = new QTextEdit;
     v = new QTextEdit;
     v->setReadOnly(true);

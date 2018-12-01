@@ -35,6 +35,7 @@ namespace UIComp {
                     *const deathDay;
         Support::SuperDateTool *const birthStatus,
                                *const deathStatus;
+        QLineEdit   *const evNameInput;
         QTextEdit   *const evNodeDesc;
 
         QGroupBox   *const effect;
