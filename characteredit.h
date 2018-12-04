@@ -9,6 +9,7 @@
 #include <QSqlQueryModel>
 #include <QTableView>
 #include <QTextEdit>
+#include "storydisplay.h"
 
 
 namespace UIComp {
@@ -33,7 +34,7 @@ namespace UIComp {
         QListWidget *const nicknames;
         QPushButton *const addNick;
         QPushButton *const removeNick;
-        QListWidget *const storyDisplay;
+        UIComp::StoryDisplay *const storyDisplay;
         QSqlQueryModel *const storyListModel;
         QPushButton *const editStory;
         QTextEdit *const comment;

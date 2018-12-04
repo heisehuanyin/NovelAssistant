@@ -23,7 +23,7 @@ CharacterEdit::CharacterEdit(QWidget *const parent):
     nicknames(new QListWidget),
     addNick(new QPushButton(tr("增加昵称"))),
     removeNick(new QPushButton(tr("移除昵称"))),
-    storyDisplay(new QListWidget),
+    storyDisplay(new StoryDisplay(this)),
     storyListModel(new QSqlQueryModel(this)),
     editStory(new QPushButton(tr("履历编辑"))),
     comment(new QTextEdit)
@@ -72,7 +72,6 @@ CharacterEdit::CharacterEdit(QWidget *const parent):
     auto grid3(new QGridLayout);
     group3->setLayout(grid3);
     grid3->addWidget(this->storyDisplay,0,0,1,2);
-    this->storyDisplay->setSelectionMode(QAbstractItemView::SingleSelection);
 
     auto group4(new QGroupBox(tr("备注")));
     grid->addWidget(group4, 10, 3, 4, 4);
