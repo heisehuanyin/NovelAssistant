@@ -46,7 +46,8 @@ bool compareEvSymbo(EventSymbo *ev1, EventSymbo *ev2){
 StoryCanvas::StoryCanvas(QWidget *parent):
     QWidget (parent),
     focuseID(-1),
-    fitWidth(20)
+    fitWidth(20),
+    focuseRect(QRectF(0.0,0.0,0.0,0.0))
 {
 
 }
@@ -149,7 +150,7 @@ void StoryCanvas::paintEvent(QPaintEvent *event)
             if(targetPoint->time() == targetEvent->startTime()->time()){
                 path.addEllipse(QRectF(firstP1, firstP2));
 
-                QPen pen(Qt::black, LineWidth);
+                QPen pen(Qt::black, LineWidth, Qt::DotLine);
                 painter.setPen(pen);
 
                 QPointF headPoint(firstP1.x() + EventWidth/2, firstP1.y());
@@ -198,6 +199,14 @@ void StoryCanvas::paintEvent(QPaintEvent *event)
             QPen pen(c);
             painter.setPen(pen);
             painter.drawPath(path);
+
+            if(this->focuseRect.width() > 1.0){
+                painter.setPen(Qt::gray);
+                painter.setBrush(QColor(0,0,0,0));
+                painter.drawRect(this->focuseRect);
+                qDebug() << this->focuseRect << endl;
+            }
+
         }
     }
 }
@@ -207,12 +216,9 @@ void StoryCanvas::mousePressEvent(QMouseEvent *event)
     auto point = event->pos();
     auto col = point.x() / (EventWidth+3);
     int colIndex = (int)col;
-    auto row = point.y() / (EventWidth * 2);
-    qDebug() << "row = " << row << endl;
+    auto row = point.y() / EventWidth;
     int rowIndex = (int)row;
-    qDebug() << "rowIndex = " << rowIndex << endl;
     auto node = timeLine.at(rowIndex);
-    auto next = timeLine.at(rowIndex + 1);
     if(colIndex >= this->colsLayout.size()){
         if(this->focuseID != -1){
             emit this->deFocuse(this->focuseID);
@@ -222,25 +228,30 @@ void StoryCanvas::mousePressEvent(QMouseEvent *event)
     }
     auto colist = this->colsLayout.at(colIndex);
 
-    qDebug() << "colIndex = " << colIndex << endl;
-
     int i=0;
     for(; i<colist->size(); ++i){
         auto targetEvent = colist->at(i);
-        if(targetEvent->startTime()->time() <= node->time() && targetEvent->endTime()->time() >= next->time()){
-            qDebug() << "EventName = " << targetEvent->name() << endl;
+
+        if(targetEvent->startTime()->time() <= node->time()&&
+                targetEvent->endTime()->time() >= node->time()){
             auto x = this->evCon.keys(targetEvent);
             this->focuseID = x.at(0);
+            auto nodeSpan = this->timeLine.indexOf(targetEvent->endTime()) - this->timeLine.indexOf(targetEvent->startTime()) + 1;
+            QPointF ltop(colIndex * (EventWidth + 3) -1, this->timeLine.indexOf(targetEvent->startTime()) * EventWidth);
+            this->focuseRect = QRectF(ltop, QSizeF(EventWidth + 2, nodeSpan * EventWidth));
+
             emit this->focuse(this->focuseID);
             break;
         }
     }
     if(i == colist->size()){
+        this->focuseRect = QRectF(QPointF(0,0), QSizeF(0,0));
         if(this->focuseID != -1){
             emit this->deFocuse(this->focuseID);
             this->focuseID = -1;
         }
     }
+    this->repaint();
 }
 
 void StoryCanvas::eventSymboReLayout()

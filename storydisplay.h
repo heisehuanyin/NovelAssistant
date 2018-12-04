@@ -79,8 +79,10 @@ namespace UIComp {
         //绘制过程中聚焦控制
         QHash<int, EventSymbo*> paintCtrl;
         double fitWidth;
+        QRectF focuseRect;
 
         void eventSymboReLayout();
+
 
     };
 
