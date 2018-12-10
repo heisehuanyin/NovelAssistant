@@ -17,20 +17,22 @@ EventnodeEdit::EventnodeEdit(QWidget *parent):
     apply(new QPushButton(tr("应用变更"))),
     eventTable(new QTableView),
     eventModel(new Support::HiddenIdModel(true)),
+    tabCon(new QTabWidget),
+    evNameInput(new QLineEdit),
     birthDay(new QPushButton(tr("xxxxx年xx月xx日"))),
     deathDay(new QPushButton(tr("xxxxx年xx月xx日"))),
     birthStatus(new Support::SuperDateTool(this)),
     deathStatus(new Support::SuperDateTool(this)),
-    evNameInput(new QLineEdit),
     evNodeDesc(new QTextEdit),
-    effect(new QGroupBox(tr("区域性影响"))),
-    localInput(new QLineEdit),
+    evNodeComment(new QTextEdit),
     localTable(new QTableView),
+    addLocation(new QPushButton(tr("添加地点"))),
+    removeLocation(new QPushButton(tr("移除地点"))),
     localProps(new QTableView),
     pre_socialDesc(new QLabel(tr("前社会描述"))),
     socialDesc(new QTextEdit),
-    pre_sufaceDesc(new QLabel(tr("前地貌描述"))),
-    sufaceDesc(new QTextEdit)
+    pre_physicalDesc(new QLabel(tr("前地貌描述"))),
+    physicalDesc(new QTextEdit)
 {
     auto bLayout(new QGridLayout);
     this->setLayout(bLayout);
@@ -42,6 +44,8 @@ EventnodeEdit::EventnodeEdit(QWidget *parent):
     this->connect(this->addItem, &QPushButton::clicked,
                   this,          &EventnodeEdit::slot_respond2Additem);
     bLayout->addWidget(this->removeItem, 0, 3);
+    bLayout->addWidget(this->apply, 0, 8);
+
     bLayout->addWidget(eventTable, 1, 0, 10, 4);
     this->eventTable->setModel(this->eventModel);
     this->eventTable->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -49,6 +53,27 @@ EventnodeEdit::EventnodeEdit(QWidget *parent):
     auto model = this->eventTable->selectionModel();
     this->connect(model,&QItemSelectionModel::selectionChanged,
                   this, &EventnodeEdit::slot_targetItemChanged);
+
+
+
+
+    bLayout->addWidget(this->tabCon, 1, 4, 10, 5);
+
+    auto panel_1 = new QWidget(this);
+    this->tabCon->addTab(panel_1, "基本信息");
+    auto panel_1_layout(new QGridLayout);
+    panel_1->setLayout(panel_1_layout);
+    panel_1_layout->setRowMinimumHeight(0, 20);
+    panel_1_layout->setRowStretch(0,0);
+    panel_1_layout->setRowMinimumHeight(1, 20);
+    panel_1_layout->setRowStretch(1,0);
+    panel_1_layout->setRowMinimumHeight(2, 20);
+    panel_1_layout->setRowStretch(2,0);
+    panel_1_layout->setRowMinimumHeight(3, 20);
+    panel_1_layout->setRowStretch(3,0);
+
+    panel_1_layout->addWidget(new QLabel(tr("名称：")));
+    panel_1_layout->addWidget(this->evNameInput, 0, 1, 1, 2);
 
     auto time(new QGroupBox(tr("始末时间")));
     auto inb(new QGridLayout);
@@ -61,36 +86,35 @@ EventnodeEdit::EventnodeEdit(QWidget *parent):
     this->connect(this->deathDay, &QPushButton::clicked,
                   this,           &EventnodeEdit::slot_editEndTime);
     inb->addWidget(new QLabel(tr("末于：")), 1, 0);
-    bLayout->addWidget(time, 1, 4, 3, 4);
-    bLayout->setRowMinimumHeight(1, 20);
-    bLayout->setRowStretch(1,0);
-    bLayout->setRowMinimumHeight(2, 20);
-    bLayout->setRowStretch(2,0);
-    bLayout->setRowMinimumHeight(3, 20);
-    bLayout->setRowStretch(3,0);
+    panel_1_layout->addWidget(time, 1, 0, 3, 3);
+
+    auto comments(new QGroupBox(tr("事件备注")));
+    auto __layout(new QHBoxLayout);
+    comments->setLayout(__layout);
+    __layout->addWidget(this->evNodeComment);
+    panel_1_layout->addWidget(comments, 0, 3, 4, 2);
 
     auto evndesc(new QGroupBox(tr("事件阶段描述")));
     auto _layout(new QGridLayout);
     evndesc->setLayout(_layout);
-    _layout->addWidget(new QLabel(tr("名称：")));
-    _layout->addWidget(this->evNameInput, 0, 1, 1, 4);
-    _layout->addWidget(this->evNodeDesc, 1, 0, 4, 5);
-    bLayout->addWidget(evndesc, 4, 4, 7, 4);
+    _layout->addWidget(this->evNodeDesc);
+    panel_1_layout->addWidget(evndesc, 4, 0, 4, 5);
 
-    effect->setCheckable(true);
-    effect->setChecked(false);
-    auto _2layout(new QGridLayout);
-    effect->setLayout(_2layout);
-    bLayout->addWidget(effect, 1, 8, 10, 5);
-    bLayout->addWidget(this->apply, 0, 12);
 
-    _2layout->addWidget(this->localInput, 0, 0, 1, 2);
-    _2layout->addWidget(this->localTable, 1, 0, 10, 2);
-    _2layout->addWidget(this->localProps, 0, 2, 5, 3);
-    _2layout->addWidget(this->pre_socialDesc, 5, 2, 1, 3);
-    _2layout->addWidget(this->socialDesc, 6, 2, 2, 3);
-    _2layout->addWidget(this->pre_sufaceDesc, 8, 2, 1, 3);
-    _2layout->addWidget(this->sufaceDesc, 9, 2, 2, 3);
+
+    auto panel_2 = new QWidget(this);
+    this->tabCon->addTab(panel_2, "地域性影响");
+    auto panel_2_layout(new QGridLayout);
+    panel_2->setLayout(panel_2_layout);
+
+    panel_2_layout->addWidget(this->localTable, 0, 0, 10, 3);
+    panel_2_layout->addWidget(this->localProps, 0, 3, 4, 2);
+    panel_2_layout->addWidget(this->pre_socialDesc, 4, 3, 1, 2);
+    panel_2_layout->addWidget(this->socialDesc, 5, 3, 2, 2);
+    panel_2_layout->addWidget(this->pre_physicalDesc, 7, 3, 1, 2);
+    panel_2_layout->addWidget(this->physicalDesc, 8, 3, 2, 2);
+    panel_2_layout->addWidget(this->addLocation, 10, 0);
+    panel_2_layout->addWidget(this->removeLocation, 10, 1);
 
     this->birthDay->setEnabled(false);
     this->deathDay->setEnabled(false);
@@ -205,20 +229,6 @@ void EventnodeEdit::slot_targetItemChanged(const QItemSelection &, const QItemSe
     this->birthDay->setEnabled(true);
     this->deathDay->setEnabled(true);
 
-    q.prepare("select "
-              "event_node "
-              "from table_locationchange "
-              "where event_node = :eNode;");
-    q.bindValue(":eNode", idvar);
-
-    if(!q.exec()){
-        qDebug() << q.lastError();
-        return;
-    }
-    while (q.next()) {
-        this->effect->setChecked(true);
-        break;
-    }
 }
 
 void EventnodeEdit::slot_editBeginTime()

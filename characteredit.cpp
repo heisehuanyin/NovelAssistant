@@ -50,7 +50,7 @@ CharacterEdit::CharacterEdit(QWidget *const parent):
     grid->addWidget(this->editStory, 0, 7, 1, 2);
 
     auto group1(new QGroupBox(tr("昵称管理")));
-    grid->addWidget(group1, 4, 3, 6, 4);
+    grid->addWidget(group1, 8, 3, 6, 4);
     auto grid1(new QGridLayout);
     group1->setLayout(grid1);
     grid1->addWidget(this->addNick, 1, 0);
@@ -59,7 +59,7 @@ CharacterEdit::CharacterEdit(QWidget *const parent):
     this->nicknames->setSelectionMode(QAbstractItemView::SingleSelection);
 
     auto group2(new QGroupBox(tr("生卒时间")));
-    grid->addWidget(group2, 1, 3, 3, 4);
+    grid->addWidget(group2, 5, 3, 3, 4);
     auto grid2(new QGridLayout);
     group2->setLayout(grid2);
     grid2->addWidget(this->birthDesc);
@@ -68,13 +68,13 @@ CharacterEdit::CharacterEdit(QWidget *const parent):
     grid2->addWidget(this->deathDay, 1, 1, 1, 3);
 
     auto group3(new QGroupBox(tr("阅历表")));
-    grid->addWidget(group3, 1, 7, 13, 4);
+    grid->addWidget(group3, 5, 7, 9, 4);
     auto grid3(new QGridLayout);
     group3->setLayout(grid3);
     grid3->addWidget(this->storyDisplay,0,0,1,2);
 
-    auto group4(new QGroupBox(tr("备注")));
-    grid->addWidget(group4, 10, 3, 4, 4);
+    auto group4(new QGroupBox(tr("人物备注")));
+    grid->addWidget(group4, 1, 3, 4, 8);
     auto grid4(new QGridLayout);
     group4->setLayout(grid4);
     grid4->addWidget(this->comment);

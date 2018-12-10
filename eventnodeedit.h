@@ -31,21 +31,24 @@ namespace UIComp {
         QTableView  *const eventTable;
         Support::HiddenIdModel *const eventModel;
 
+        QTabWidget  *const tabCon;
+
+        QLineEdit   *const evNameInput;
         QPushButton *const birthDay,
                     *const deathDay;
         Support::SuperDateTool *const birthStatus,
                                *const deathStatus;
-        QLineEdit   *const evNameInput;
         QTextEdit   *const evNodeDesc;
+        QTextEdit   *const evNodeComment;
 
-        QGroupBox   *const effect;
-        QLineEdit   *const localInput;
         QTableView  *const localTable;
+        QPushButton *const addLocation;
+        QPushButton *const removeLocation;
         QTableView  *const localProps;
         QLabel      *const pre_socialDesc;
         QTextEdit   *const socialDesc;
-        QLabel      *const pre_sufaceDesc;
-        QTextEdit   *const sufaceDesc;
+        QLabel      *const pre_physicalDesc;
+        QTextEdit   *const physicalDesc;
 
     private slots:
         void slot_queryEventNode(const QString &text);

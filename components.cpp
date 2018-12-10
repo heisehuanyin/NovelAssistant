@@ -12,7 +12,7 @@ UIComp::GTME::GTME(QWidget *parent):
     QDialog (parent),
     groups(new QComboBox),
     types(new QComboBox),
-    items(new QListView),
+    items(new QTableView),
     itemsmodel(new QStandardItemModel),
     up(new QPushButton(tr("上移"))),
     down(new QPushButton(tr("下移"))),
@@ -128,7 +128,8 @@ void UIComp::GTME::slot_typesSelected(const QString &text)
     if(text == QString())
         return;
     QString exeStr = "select mark_name, "
-                     "mark_id "
+                     "mark_id,"
+                     "comment "
                      "from table_gtm "
                      "where (group_name = \""+this->groups->currentText()+"\")"
                      "  and (type_name  = \""+text+"\") "
@@ -140,12 +141,25 @@ void UIComp::GTME::slot_typesSelected(const QString &text)
     }
     this->list.clear();
     while (q.next()) {
+        auto rowExm = QList<QStandardItem*>();
+
         auto item = q.value(0).toString();
-        auto xv = new QStandardItem(item);
-        xv->setEditable(true);
-        this->itemsmodel->appendRow(xv);
+        auto u1 = new QStandardItem(item);
+        u1->setEditable(true);
+        rowExm.append(u1);
+
+        item = q.value(2).toString();
+        auto u2 = new QStandardItem(item);
+        u2->setEditable(true);
+        rowExm.append(u2);
+
+        this->itemsmodel->appendRow(rowExm);
+
         this->list.append(q.value(1));
     }
+    this->itemsmodel->setHeaderData(0,Qt::Horizontal,"名称");
+    this->itemsmodel->setHeaderData(1,Qt::Horizontal,"备注");
+    this->items->resizeColumnsToContents();
     this->apply->setEnabled(false);
     if(this->itemsmodel->rowCount()==0){
         this->insertType->setEnabled(true);
@@ -162,10 +176,10 @@ void UIComp::GTME::slot_typesSelected(const QString &text)
 void UIComp::GTME::slot_insertNewType()
 {
     QString exeStr  = "insert into table_gtm "
-                      "(group_name,type_name,mark_number,mark_name) "
+                      "(group_name,type_name,mark_number,mark_name,comment) "
                       "values(\""+this->groups->currentText()+"\","
                              "\""+this->types->currentText()+"\","
-                             "0, \"Items-0\");";
+                             "0, \"Items-0\", \"no comment\");";
     QSqlQuery q;
     if(!q.exec(exeStr)){
         QMessageBox::critical(this, "ERROR", "SQL语句执行错误3");
@@ -193,9 +207,15 @@ void UIComp::GTME::slot_itemDown()
 
 void UIComp::GTME::slot_itemAppend()
 {
-    auto xv = new QStandardItem("双击修改");
-    xv->setEditable(true);
-    this->itemsmodel->appendRow(xv);
+    auto xv1 = new QStandardItem("双击修改名称");
+    xv1->setEditable(true);
+    auto xv2 = new QStandardItem("双击修改备注");
+    xv2->setEditable(true);
+    auto row = QList<QStandardItem*>();
+    row.append(xv1);
+    row.append(xv2);
+
+    this->itemsmodel->appendRow(row);
     this->apply->setEnabled(true);
 }
 
@@ -233,17 +253,19 @@ void UIComp::GTME::slot_itemApply()
     }else if(listLen < itemCount){
         int appendnum = itemCount - listLen;
         q.prepare("insert into table_gtm "
-                  "(group_name, type_name, mark_number, mark_name)"
-                  "values(?, ?, -1, ?);");
-        QVariantList gname,tname,kname;
+                  "(group_name, type_name, mark_number, mark_name, comment)"
+                  "values(?, ?, -1, ?, ?);");
+        QVariantList gname,tname,kname,cname;
         for(int i=0; i<appendnum; ++i){
             gname << groupName;
             tname << typeName;
             kname << "Please Enter!";
+            cname << "Please Enter!";
         }
         q.addBindValue(gname);
         q.addBindValue(tname);
         q.addBindValue(kname);
+        q.addBindValue(cname);
 
         if(!q.execBatch())
             qDebug() << q.lastError();
@@ -263,19 +285,23 @@ void UIComp::GTME::slot_itemApply()
         }
     }
 
-    q.prepare("update table_gtm set "
+    q.prepare("update table_gtm "
+              "set "
               "mark_number = ?, "
-              "mark_name = ?  "
+              "mark_name = ? ,"
+              "comment = ? "
               "where mark_id = ?;");
-    QVariantList marknum, markname, ids;
+    QVariantList marknum, markname, ids, comment;
     for(int i=0; i<this->itemsmodel->rowCount(); ++i){
-        auto item = this->itemsmodel->item(i);
+        auto item1 = this->itemsmodel->item(i);
         marknum << i;
-        markname<< item->text();
+        markname<< item1->text();
         ids << this->list.at(i);
+        comment << this->itemsmodel->item(i,1)->text();
     }
     q.addBindValue(marknum);
     q.addBindValue(markname);
+    q.addBindValue(comment);
     q.addBindValue(ids);
 
     if(!q.execBatch()){
@@ -284,7 +310,7 @@ void UIComp::GTME::slot_itemApply()
     this->apply->setEnabled(false);
 }
 
-void UIComp::GTME::slot_btnEnableRelyOnSelect(const QItemSelection &selected, const QItemSelection &deselected)
+void UIComp::GTME::slot_btnEnableRelyOnSelect(const QItemSelection &selected, const QItemSelection &)
 {
     auto index = selected.indexes().at(0);
     this->up->setEnabled(true);

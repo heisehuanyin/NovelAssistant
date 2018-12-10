@@ -6,6 +6,7 @@
 #include <QListView>
 #include <QPushButton>
 #include <QStandardItemModel>
+#include <QTableView>
 
 
 namespace UIComp {
@@ -20,7 +21,7 @@ namespace UIComp {
     private:
         QComboBox *const groups;
         QComboBox *const types;
-        QListView *const items;
+        QTableView *const items;
         QStandardItemModel *const itemsmodel;
         QPushButton *const up;
         QPushButton *const down;
@@ -39,8 +40,7 @@ namespace UIComp {
         void slot_itemAppend();
         void slot_itemRemove();
         void slot_itemApply();
-        void slot_btnEnableRelyOnSelect(const QItemSelection &selected,
-                                        const QItemSelection &deselected);
+        void slot_btnEnableRelyOnSelect(const QItemSelection &selected, const QItemSelection &);
         void slot_btnApplyRespond(QStandardItem *);
     };
 }
