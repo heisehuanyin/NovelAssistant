@@ -15,7 +15,7 @@ PropEdit::PropEdit(QWidget * parent):
     typeLimit(new QComboBox),
     input(new QLineEdit ),
     table(new QTableView ),
-    tableModel(new QSqlQueryModel(this)),
+    tableModel(new Support::HiddenIdModel(this)),
     addItem(new QPushButton(tr("添加道具"))),
     removeItem(new QPushButton(tr("删除道具"))),
     apply(new QPushButton(tr("应用修改"))),
@@ -91,6 +91,14 @@ PropEdit::~PropEdit()
 
 }
 
+QList<QVariant> PropEdit::getSelectedItems()
+{
+    auto instance(new PropEdit);
+    instance->tableModel->changeCheckable(true);
+    instance->exec();
+    return instance->tableModel->selectedRecordIDs();
+}
+
 void PropEdit::slot_queryProps(const QString &text)
 {
     this->tableModel->clear();
@@ -108,6 +116,7 @@ void PropEdit::slot_queryProps(const QString &text)
 
 
     QString execStr = "select "
+                      "pt.prop_id,"
                       "pt.name, "
                       "gt.mark_name "
                       "from table_propbasic pt inner join table_gtm gt "
@@ -125,13 +134,11 @@ void PropEdit::slot_queryProps(const QString &text)
     execStr.replace(":tname",typeStr);
     execStr += "order by gt.mark_number;";
 
-    this->tableModel->setQuery(execStr);
-    if (tableModel->lastError().isValid())
-        qDebug() << tableModel->lastError();
-    this->tableModel->setHeaderData(0,Qt::Horizontal, "名称");
-    this->tableModel->setHeaderData(1,Qt::Horizontal, "等级");
+    this->tableModel->setQuery(3,execStr);
+    this->tableModel->setHorizontalHeader(0, "名称");
+    this->tableModel->setHorizontalHeader(1, "等级");
 
-    if(this->tableModel->rowCount() == 0){
+    if(this->tableModel->rowCount(QModelIndex()) == 0){
         this->addItem->setEnabled(true);
     }else{
         this->addItem->setEnabled(false);
@@ -179,21 +186,16 @@ void PropEdit::slot_responseItemSelection(const QItemSelection &, const QItemSel
     auto index = this->table->currentIndex();
     if(!index.isValid())
         return;
-    auto name = this->tableModel->data(index.sibling(index.row(), 0)).toString();
+    auto id = this->tableModel->oppositeID(index);
+
     QSqlQuery q;
     q.prepare("select "
-              "prop_desc, mark, number "
+              "prop_desc, "
+              "mark, "
+              "number "
               "from table_propbasic "
-              "where (name = :name)"
-              "and   (mark in ("
-              "select "
-              "mark_id "
-              "from table_gtm "
-              "where (group_name='道具级别') "
-              "and   (type_name = :tname) "
-              "));");
-    q.bindValue(":name", name);
-    q.bindValue(":tname", this->typeLimit->currentText());
+              "where prop_id = :id;");
+    q.bindValue(":id", id);
     if(!q.exec()){
         qDebug() << q.lastError();
         return;
@@ -260,27 +262,19 @@ void PropEdit::slot_responseApply()
     if(!index.isValid())
         return;
 
-    auto name = this->tableModel->data(index.sibling(index.row(), 0)).toString();
+    auto id = this->tableModel->oppositeID(index);
+
     QSqlQuery q;
     QString exeStr = "update table_propbasic "
                      "set "
                      "mark = :mark, "
                      "number = :number,"
                      "prop_desc = :desc "
-                     "where (name = :name)"
-                     "and   (mark in ("
-                     "select "
-                     "mark_id "
-                     "from table_gtm "
-                     "where (group_name='道具级别') "
-                     "and   (type_name = :tname) "
-                     "));";
+                     "where prop_id = :id;";
     q.prepare(exeStr);
     q.bindValue(":mark", this->level->currentData());
     q.bindValue(":number", this->value->text().toLongLong());
     q.bindValue(":desc", this->descBlock->toPlainText());
-    q.bindValue(":name", name);
-    q.bindValue(":tname", this->typeLimit->currentText());
 
     if(!q.exec())
         qDebug() << q.lastError();

@@ -38,7 +38,8 @@ SOURCES += \
     superdatetool.cpp \
     eventnodeedit.cpp \
     hiddenidmodel.cpp \
-    storydisplay.cpp
+    storydisplay.cpp \
+    storyboard.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -51,7 +52,8 @@ HEADERS += \
     superdatetool.h \
     eventnodeedit.h \
     hiddedidmodel.h \
-    storydisplay.h
+    storydisplay.h \
+    storyboard.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

@@ -91,6 +91,7 @@ UIComp::GTME::~GTME()
 
 void UIComp::GTME::slot_groupsSelected(const QString &text)
 {
+    this->types->setEditable(false);
     if(text == "<手动选择>"){
         this->types->clear();
         return;
@@ -179,14 +180,20 @@ void UIComp::GTME::slot_insertNewType()
                       "(group_name,type_name,mark_number,mark_name,comment) "
                       "values(\""+this->groups->currentText()+"\","
                              "\""+this->types->currentText()+"\","
-                             "0, \"Items-0\", \"no comment\");";
+                             "0, \"双击修改名称\", \"双击修改备注\");";
     QSqlQuery q;
     if(!q.exec(exeStr)){
         QMessageBox::critical(this, "ERROR", "SQL语句执行错误3");
         return;
     }
-    this->slot_typesSelected(this->types->currentText());
+    auto tempText = this->types->currentText();
+    this->slot_groupsSelected(this->groups->currentText());
+    if(this->types->currentText() != tempText)
+        this->types->setCurrentText(tempText);
+    else
+        this->slot_typesSelected(tempText);
     this->apply->setEnabled(true);
+    this->types->setEditable(false);
 }
 
 void UIComp::GTME::slot_itemUp()

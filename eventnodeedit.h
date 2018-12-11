@@ -22,6 +22,12 @@ namespace UIComp {
         explicit EventnodeEdit(QWidget *parent=nullptr);
         virtual ~EventnodeEdit();
 
+        /**
+         * @brief 获取选中条目id集合
+         * @return ID集合
+         */
+        static QList<QVariant> getSelectedItems();
+
     private:
         QLineEdit   *const input;
         QPushButton *const addItem,

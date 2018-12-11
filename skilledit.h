@@ -1,6 +1,8 @@
 #ifndef SKILLEDIT_H
 #define SKILLEDIT_H
 
+#include "hiddedidmodel.h"
+
 #include <QComboBox>
 #include <QDialog>
 #include <QLabel>
@@ -19,11 +21,17 @@ namespace UIComp {
         explicit SkillEdit(QWidget *parent = nullptr);
         virtual ~SkillEdit();
 
+        /**
+         * @brief 获取选中条目id集合
+         * @return 集合
+         */
+        static QList<QVariant> getSelectedItems();
+
     private:
         QComboBox *const typeLimit;
         QLineEdit *const input;
         QTableView *const table;
-        QSqlQueryModel *const tableModel;
+        Support::HiddenIdModel *const tableModel;
         QPushButton *const addItem;
         QPushButton *const removeItem;
         QPushButton *const apply;

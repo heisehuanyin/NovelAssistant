@@ -1,6 +1,8 @@
 #ifndef PROPEDIT_H
 #define PROPEDIT_H
 
+#include "hiddedidmodel.h"
+
 #include <QComboBox>
 #include <QDialog>
 #include <QLabel>
@@ -19,11 +21,17 @@ namespace UIComp {
         explicit PropEdit(QWidget *parent = nullptr);
         virtual ~PropEdit();
 
+        /**
+         * @brief 静态方法返回在本界面中选中的条目
+         * @return 返回选中的条目的id
+         */
+        static QList<QVariant> getSelectedItems();
+
     private:
         QComboBox *const typeLimit;
         QLineEdit *const input;
         QTableView *const table;
-        QSqlQueryModel *const tableModel;
+        Support::HiddenIdModel *const tableModel;
         QPushButton *const addItem;
         QPushButton *const removeItem;
         QPushButton *const apply;
@@ -32,6 +40,7 @@ namespace UIComp {
         QLabel *const descLine;
         QLineEdit *const value;
         QTextEdit *const descBlock;
+
 
     private slots:
         void slot_queryProps(const QString &text);

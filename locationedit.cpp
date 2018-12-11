@@ -14,7 +14,7 @@ LocationEdit::LocationEdit(QWidget *parent):
     locAdd(new QPushButton(tr("添加地点"))),
     locRemove(new QPushButton(tr("移除地点"))),
     locTable(new QTableView),
-    locQueryModel(new QSqlQueryModel(this)),
+    locQueryModel(new Support::HiddenIdModel(this)),
     suffixInput(new QLineEdit),
     xposInput(new QSpinBox),
     yposInput(new QSpinBox),
@@ -133,21 +133,20 @@ void LocationEdit::slot_queryLocation(const QString &text)
         return;
     }
     QString execStr = "select "
+                      "location_id, "
                       "corrdinate_suffix, "
-                      "location_name, "
-                      "location_id "
+                      "location_name "
                       "from table_locationlist ";
     if(text != "*" )
         execStr +=    "where location_name like '%" + text + "%' " ;
 
     execStr += "order by corrdinate_suffix;";
 
-    this->locQueryModel->setQuery(execStr);
-    this->locQueryModel->setHeaderData(0, Qt::Horizontal, "前缀");
-    this->locQueryModel->setHeaderData(1, Qt::Horizontal, "名称");
-    this->locQueryModel->setHeaderData(2, Qt::Horizontal, "Inr_ID");
+    this->locQueryModel->setQuery(3, execStr);
+    this->locQueryModel->setHorizontalHeader(0, "坐标系前缀");
+    this->locQueryModel->setHorizontalHeader(1, "地点名称");
 
-    if(this->locQueryModel->rowCount() == 0){
+    if(this->locQueryModel->rowCount(QModelIndex()) == 0){
         this->locAdd->setEnabled(true);
     }
 }
@@ -168,11 +167,11 @@ void LocationEdit::slot_addLocation()
 void LocationEdit::slot_removeLocation()
 {
     auto index = this->locTable->currentIndex();
-    auto id = this->locQueryModel->data(index.sibling(index.row(), 2)).toString();
-    auto name=this->locQueryModel->data(index.sibling(index.row(), 1)).toString();
+    auto id = this->locQueryModel->oppositeID(index);
+    auto name=this->locQueryModel->data(index.sibling(index.row(), 1), Qt::DisplayRole).toString();
     QString exeStr = "delete "
                      "from table_locationlist "
-                     "where location_id = " +id+ ";";
+                     "where location_id = " +id.toString() + ";";
     QSqlQuery q;
     if(!q.exec(exeStr))
         qDebug() << q.lastError();
@@ -189,8 +188,8 @@ void LocationEdit::slot_statusChanged()
 void LocationEdit::slot_changeApply()
 {
     auto index = this->locTable->currentIndex();
-    auto id = this->locQueryModel->data(index.sibling(index.row(), 2)).toString();
-    auto name=this->locQueryModel->data(index.sibling(index.row(), 1)).toString();
+    auto id = this->locQueryModel->oppositeID(index);
+    auto name=this->locQueryModel->data(index.sibling(index.row(), 1), Qt::DisplayRole).toString();
 
     QSqlQuery p;
     p.prepare("update table_locationlist "
@@ -223,11 +222,11 @@ void LocationEdit::slot_changeApply()
     this->locName->setText(name);
 }
 
-void LocationEdit::slot_responseItemSelection(const QItemSelection &selected, const QItemSelection &deselected)
+void LocationEdit::slot_responseItemSelection(const QItemSelection &selected, const QItemSelection &)
 {
     this->locRemove->setEnabled(true);
     auto index = selected.indexes().at(0);
-    auto item = this->locQueryModel->data(index.sibling(index.row(), 2));
+    auto item = this->locQueryModel->oppositeID(index);
 
     QString exeStr = "select "
                      "corrdinate_suffix, "

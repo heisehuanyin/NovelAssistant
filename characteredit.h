@@ -43,6 +43,7 @@ namespace UIComp {
         void slot_queryCharacter(const QString &text);
         void slot_addItem();
         void slot_responseItemSelection(const QItemSelection &, const QItemSelection &);
+        void slot_editCharcterStory();
     };
 }
 

@@ -1,4 +1,5 @@
 #include "characteredit.h"
+#include "storyboard.h"
 
 #include <QGridLayout>
 #include <QGroupBox>
@@ -46,8 +47,10 @@ CharacterEdit::CharacterEdit(QWidget *const parent):
     this->connect(this->addItem, &QPushButton::clicked,
                   this,          &CharacterEdit::slot_addItem);
     grid->addWidget(this->removeItem, 0, 5, 1, 2);
-    grid->addWidget(this->apply, 0, 9, 1, 2);
     grid->addWidget(this->editStory, 0, 7, 1, 2);
+    this->connect(this->editStory,  &QPushButton::clicked,
+                  this,             &CharacterEdit::slot_editCharcterStory);
+    grid->addWidget(this->apply, 0, 9, 1, 2);
 
     auto group1(new QGroupBox(tr("昵称管理")));
     grid->addWidget(group1, 8, 3, 6, 4);
@@ -168,6 +171,12 @@ void CharacterEdit::slot_responseItemSelection(const QItemSelection &, const QIt
     this->birthDay->setText(QString("%1").arg(q.value(1).toLongLong()));
     this->deathDay->setText(QString("%1").arg(q.value(2).toLongLong()));
     this->comment->setText(q.value(3).toString());
+}
+
+void CharacterEdit::slot_editCharcterStory()
+{
+    auto dialog(new StoryBoard(this));
+    dialog->exec();
 }
 
 

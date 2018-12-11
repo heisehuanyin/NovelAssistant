@@ -1,6 +1,8 @@
 #ifndef LOCATIONEDIT_H
 #define LOCATIONEDIT_H
 
+#include "hiddedidmodel.h"
+
 #include <QDialog>
 #include <QGroupBox>
 #include <QLineEdit>
@@ -27,7 +29,7 @@ namespace UIComp {
         QPushButton *const locAdd;
         QPushButton *const locRemove;
         QTableView *const locTable;
-        QSqlQueryModel *const locQueryModel;
+        Support::HiddenIdModel *const locQueryModel;
         QLineEdit *const suffixInput;
         QSpinBox *const xposInput;
         QSpinBox *const yposInput;
@@ -44,8 +46,7 @@ namespace UIComp {
         void slot_removeLocation();
         void slot_statusChanged();
         void slot_changeApply();
-        void slot_responseItemSelection(const QItemSelection &selected,
-                                        const QItemSelection &deselected);
+        void slot_responseItemSelection(const QItemSelection &selected, const QItemSelection &);
         void slot_addNick();
         void slot_removeNick();
     };

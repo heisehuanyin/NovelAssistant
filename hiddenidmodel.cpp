@@ -7,9 +7,9 @@
 
 using namespace Support;
 
-HiddenIdModel::HiddenIdModel(bool checkable, QObject *parent):
+HiddenIdModel::HiddenIdModel(QObject *parent):
     QAbstractTableModel (parent),
-    checkable(checkable)
+    checkable(false)
 {
 
 }
@@ -17,6 +17,11 @@ HiddenIdModel::HiddenIdModel(bool checkable, QObject *parent):
 HiddenIdModel::~HiddenIdModel()
 {
 
+}
+
+void HiddenIdModel::changeCheckable(bool value)
+{
+    this->checkable = value;
 }
 
 void HiddenIdModel::setQuery(int valueCount, QString sqlStatement, int indexOfId)
@@ -53,6 +58,14 @@ void HiddenIdModel::setQuery(int valueCount, QString sqlStatement, int indexOfId
         }
         this->contents.append(QPair<QPair<QVariant, bool>,QList<QVariant>>(rowPrefix,valus));
     }
+    this->endResetModel();
+}
+
+void HiddenIdModel::clear()
+{
+    this->beginResetModel();
+    this->contents.clear();
+
     this->endResetModel();
 }
 

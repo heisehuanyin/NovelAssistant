@@ -15,7 +15,7 @@ SkillEdit::SkillEdit(QWidget * parent):
     typeLimit(new QComboBox),
     input(new QLineEdit ),
     table(new QTableView ),
-    tableModel(new QSqlQueryModel(this)),
+    tableModel(new Support::HiddenIdModel(this)),
     addItem(new QPushButton(tr("添加技能"))),
     removeItem(new QPushButton(tr("删除技能"))),
     apply(new QPushButton(tr("应用修改"))),
@@ -91,6 +91,14 @@ SkillEdit::~SkillEdit()
 
 }
 
+QList<QVariant> SkillEdit::getSelectedItems()
+{
+    auto instance(new SkillEdit);
+    instance->tableModel->changeCheckable(true);
+    instance->exec();
+    return instance->tableModel->selectedRecordIDs();
+}
+
 void SkillEdit::slot_querySkills(const QString &text)
 {
     this->tableModel->clear();
@@ -106,6 +114,7 @@ void SkillEdit::slot_querySkills(const QString &text)
         return;
     }
     QString execStr = "select "
+                      "st.skill_id, "
                       "st.name, "
                       "gt.mark_name "
                       "from table_skilllist st inner join table_gtm gt "
@@ -124,13 +133,11 @@ void SkillEdit::slot_querySkills(const QString &text)
     execStr.replace(":tname", typeStr);
     execStr += "order by gt.mark_number;";
 
-    this->tableModel->setQuery(execStr);
-    if (tableModel->lastError().isValid())
-        qDebug() << tableModel->lastError();
-    this->tableModel->setHeaderData(0,Qt::Horizontal, "名称");
-    this->tableModel->setHeaderData(1,Qt::Horizontal, "等级");
+    this->tableModel->setQuery(3, execStr);
+    this->tableModel->setHorizontalHeader(0, "名称");
+    this->tableModel->setHorizontalHeader(1, "等级");
 
-    if(this->tableModel->rowCount() == 0){
+    if(this->tableModel->rowCount(QModelIndex()) == 0){
         this->addItem->setEnabled(true);
     }else{
         this->addItem->setEnabled(false);
@@ -178,21 +185,17 @@ void SkillEdit::slot_responseItemSelection(const QItemSelection &, const QItemSe
     auto index = this->table->currentIndex();
     if(!index.isValid())
         return;
-    auto name = this->tableModel->data(index.sibling(index.row(), 0)).toString();
+
+    auto id = this->tableModel->oppositeID(index);
+
     QSqlQuery q;
     q.prepare("select "
-              "skill_desc, mark, number "
+              "skill_desc, "
+              "mark, "
+              "number "
               "from table_skilllist "
-              "where (name = :name)"
-              "and   (mark in ("
-              "select "
-              "mark_id "
-              "from table_gtm "
-              "where (group_name='技能级别') "
-              "and   (type_name = :tname) "
-              "));");
-    q.bindValue(":name", name);
-    q.bindValue(":tname", this->typeLimit->currentText());
+              "where skill_id = :id;");
+    q.bindValue(":id", id);
     if(!q.exec()){
         qDebug() << q.lastError();
         return;
@@ -259,27 +262,20 @@ void SkillEdit::slot_responseApply()
     if(!index.isValid())
         return;
 
-    auto name = this->tableModel->data(index.sibling(index.row(), 0)).toString();
+    auto id = this->tableModel->oppositeID(index);
+
     QSqlQuery q;
     QString exeStr = "update table_skilllist "
                      "set "
                      "mark = :mark, "
                      "number = :number,"
                      "skill_desc = :desc "
-                     "where (name = :name)"
-                     "and   (mark in ("
-                     "select "
-                     "mark_id "
-                     "from table_gtm "
-                     "where (group_name='技能级别') "
-                     "and   (type_name = :tname) "
-                     "));";
+                     "where skill_id = :id;";
     q.prepare(exeStr);
     q.bindValue(":mark", this->level->currentData());
     q.bindValue(":number", this->value->text().toLongLong());
     q.bindValue(":desc", this->descBlock->toPlainText());
-    q.bindValue(":name", name);
-    q.bindValue(":tname", this->typeLimit->currentText());
+    q.bindValue(":id", id);
 
     if(!q.exec())
         qDebug() << q.lastError();
@@ -317,21 +313,6 @@ void SkillEdit::slot_levelEdit()
 
     this->slot_responseItemSelection(QItemSelection(), QItemSelection());
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

@@ -6,6 +6,18 @@
 
 namespace Support {
 
+    /**
+     * @brief 专用隐藏条目id的table模型，利用sql查询数据库，本模型不支持条目编辑，仅支持勾选条目，以方便选择功能开发。
+     * 使用方法：
+     * 1.新建模型，可以利用changeCheckable决定是否允许勾选条目；
+     * 2.【可选】首先调用setSelectedDetermine方法，根据传入的sql获取id集合，此id集合用于判定结果条目是否选中状态，条目id包含在其中意味着被勾选；
+     * 3.使用setQuery方法，根据传入的sql语句进行查询，该语句中必须包含结果条目id，此id将会被隐藏，供后台使用；
+     * 4.【可选】使用setHorizontalHeader方法为结果设置列标题；
+     * 5.可以对视图进行操作，勾选条目和取消条目，这个过程中表格模型会发出对应信号；
+     * 6.【可选】使用selectedRecordIDs获取所有被选中的条目的id；
+     * 7.【可选】使用oppositeID方法，能够获取视图中指定结果条目的id；
+     * 8.【可选】使用clear方法，清空结果集合，仅清空结果集合；
+     */
     class HiddenIdModel:public QAbstractTableModel
     {
         Q_OBJECT
@@ -15,8 +27,14 @@ namespace Support {
          * @param parent 父对象
          * @param checkable 决定是否允许显示checkable特性
          */
-        explicit HiddenIdModel(bool checkable = false, QObject*parent=nullptr);
+        explicit HiddenIdModel(QObject*parent=nullptr);
         virtual ~HiddenIdModel() override;
+
+        /**
+         * @brief 修改模型条目是否允许勾选
+         * @param value 是否允许
+         */
+        void changeCheckable(bool value);
 
         /**
          * @brief 执行查询语句,执行语句中必须指明结果包含每条记录的唯一id，指明id位于结果的索引，以便于模型隐藏它
@@ -25,6 +43,8 @@ namespace Support {
          * @param indexOfId 指明在此语句的目标值序列中记录id所占的index
          */
         void setQuery(int valueCount, QString sqlStatement, int indexOfId = 0);
+
+        void clear();
 
         void setHorizontalHeader(int index, QString header);
 

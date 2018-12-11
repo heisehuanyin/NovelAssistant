@@ -16,7 +16,7 @@ EventnodeEdit::EventnodeEdit(QWidget *parent):
     removeItem(new QPushButton(tr("删除"))),
     apply(new QPushButton(tr("应用变更"))),
     eventTable(new QTableView),
-    eventModel(new Support::HiddenIdModel(true)),
+    eventModel(new Support::HiddenIdModel(this)),
     tabCon(new QTabWidget),
     evNameInput(new QLineEdit),
     birthDay(new QPushButton(tr("xxxxx年xx月xx日"))),
@@ -124,6 +124,14 @@ EventnodeEdit::EventnodeEdit(QWidget *parent):
 }
 
 EventnodeEdit::~EventnodeEdit(){}
+
+QList<QVariant> EventnodeEdit::getSelectedItems()
+{
+    auto instance(new EventnodeEdit);
+    instance->eventModel->changeCheckable(true);
+    instance->exec();
+    return instance->eventModel->selectedRecordIDs();
+}
 
 void EventnodeEdit::slot_queryEventNode(const QString &text)
 {
