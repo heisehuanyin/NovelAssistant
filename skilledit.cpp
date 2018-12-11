@@ -169,6 +169,25 @@ void SkillEdit::slot_addItem()
     this->input->setText(xname);
 }
 
+void SkillEdit::slot_removeItem()
+{
+    auto index = this->table->currentIndex();
+    if(!index.isValid())
+        return;
+
+    auto id = this->tableModel->oppositeID(index);
+    QString exec = "delete "
+                   "from table_skilllist "
+                   "where skill_id = :id;";
+    QSqlQuery q;
+    q.prepare(exec);
+    q.bindValue(":id", id);
+    if(!q.exec())
+        qDebug() << q.lastError();
+    this->removeItem->setEnabled(false);
+    m
+}
+
 void SkillEdit::slot_clearStatus()
 {
     this->tableModel->clear();
