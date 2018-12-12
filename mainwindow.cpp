@@ -61,31 +61,26 @@ MainWindow::MainWindow(QWidget *parent)
 
     this->mainSplit->addWidget(editStack);
     this->editStack->setTabsClosable(true);
-    auto v = new QTextEdit;
-    v = new QTextEdit;
-    v->setReadOnly(true);
+    auto v = new QTextEdit(this);
     editStack->addTab(v, "one");
-    v = new QTextEdit;
-    v->setReadOnly(true);
+    v = new QTextEdit(this);
     editStack->addTab(v, "Two");
-    v = new QTextEdit;
-    v->setReadOnly(true);
+    v = new QTextEdit(this);
     editStack->addTab(v, "Three");
-    v = new QTextEdit;
-    v->setReadOnly(true);
+    v = new QTextEdit(this);
     editStack->addTab(v, "four");
 
 
 
     this->mainSplit->addWidget(rightSplit);
     //this->rightView->setWidget(rightSplit);
-    auto x = new QTextEdit;
+    auto x = new QTextEdit(this);
     x->setReadOnly(true);
     this->rightSplit->addWidget(x);
-    x = new QTextEdit;
+    x = new QTextEdit(this);
     x->setReadOnly(true);
     this->rightSplit->addWidget(x);
-    x = new QTextEdit;
+    x = new QTextEdit(this);
     x->setReadOnly(true);
     this->rightSplit->addWidget(x);
 }

@@ -145,7 +145,7 @@ void EventnodeEdit::slot_queryEventNode(const QString &text)
                       "event_name, "
                       "node_name, "
                       "node_desc "
-                      "from table_eventnodeeffect ";
+                      "from table_eventnodebasic ";
     if(text != "*"){
         execStr += "where event_name like '%"+text+"%' ";
     }
@@ -182,7 +182,7 @@ void EventnodeEdit::slot_respond2Additem()
     }
 
     QSqlQuery q;
-    q.prepare("insert into table_eventnodeeffect "
+    q.prepare("insert into table_eventnodebasic "
               "(node_name, event_name, begin_time, end_time, node_desc) "
               "values(:nName, :eName, :begin, :end, :desc);");
     q.bindValue(":eName", eName);
@@ -216,7 +216,7 @@ void EventnodeEdit::slot_targetItemChanged(const QItemSelection &, const QItemSe
               "end_time, "
               "node_desc, "
               "node_name "
-              "from table_eventnodeeffect "
+              "from table_eventnodebasic "
               "where ev_node_id = :id;");
     q.bindValue(":id", idvar);
 
@@ -241,24 +241,24 @@ void EventnodeEdit::slot_targetItemChanged(const QItemSelection &, const QItemSe
 
 void EventnodeEdit::slot_editBeginTime()
 {
-    auto value = this->birthStatus->dateEdit();
-    if(value > this->deathStatus->toLongLong()){
+    auto time_value = this->birthStatus->dateEdit();
+    if(time_value > this->deathStatus->toLongLong()){
         QMessageBox::critical(this, "date error", "起始日期不可晚于终末日期！");
         return;
     }
-    this->birthStatus->resetDate(value);
+    this->birthStatus->resetDate(time_value);
     this->birthDay->setText(this->birthStatus->toString());
     this->apply->setEnabled(true);
 }
 
 void EventnodeEdit::slot_editEndTime()
 {
-    auto value = this->deathStatus->dateEdit();
-    if(this->birthStatus->toLongLong() > value){
+    auto time_value = this->deathStatus->dateEdit();
+    if(this->birthStatus->toLongLong() > time_value){
         QMessageBox::critical(this, "date error", "起始日期不可晚于终末日期！");
         return;
     }
-    this->deathStatus->resetDate(value);
+    this->deathStatus->resetDate(time_value);
     this->deathDay->setText(this->deathStatus->toString());
     this->apply->setEnabled(true);
 }

@@ -39,6 +39,8 @@ PropEdit::PropEdit(QWidget * parent):
     this->connect(this->addItem,&QPushButton::clicked,
                   this,        &PropEdit::slot_addItem);
     grid->addWidget(this->removeItem, 0, 4);
+    this->connect(this->removeItem, &QPushButton::clicked,
+                  this,             &PropEdit::slot_removeItem);
     grid->addWidget(this->apply, 0, 5);
     this->connect(this->apply, &QPushButton::clicked,
                   this,        &PropEdit::slot_responseApply);
@@ -168,6 +170,29 @@ void PropEdit::slot_addItem()
     auto xname = this->input->text();
     this->input->setText("");
     this->input->setText(xname);
+}
+
+void PropEdit::slot_removeItem()
+{
+
+    auto index = this->table->currentIndex();
+    if(!index.isValid())
+        return;
+
+    auto id = this->tableModel->oppositeID(index);
+    QString exec = "delete "
+                   "from table_propbasic "
+                   "where prop_id = :id;";
+    QSqlQuery q;
+    q.prepare(exec);
+    q.bindValue(":id", id);
+    if(!q.exec())
+        qDebug() << q.lastError();
+    this->removeItem->setEnabled(false);
+    auto name = this->tableModel->data(index.sibling(index.row(), 0), Qt::DisplayRole);
+    this->input->setText("");
+    this->input->setText(name.toString());
+
 }
 
 void PropEdit::slot_clearStatus()
@@ -300,8 +325,8 @@ void PropEdit::slot_statusChanged()
         return;
     q.next();
     QString content = "::" + q.value(0).toString()
-                    + ">>" + q.value(1).toString()
-                    + ":"  + q.value(2).toString();
+            + ">>" + q.value(1).toString()
+            + ":"  + q.value(2).toString();
     this->descLine->setText(content);
 }
 

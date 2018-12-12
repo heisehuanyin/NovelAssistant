@@ -270,10 +270,11 @@ void LocationEdit::slot_addNick()
 void LocationEdit::slot_removeNick()
 {
     auto row = this->nickNames->currentRow();
-    auto item = this->nickNames->item(row);
-    if(!item)
+
+    auto x = this->nickNames->takeItem(row);
+    if(!x)
         return;
-    this->nickNames->removeItemWidget(item);
+    delete x;
 }
 
 

@@ -39,6 +39,8 @@ SkillEdit::SkillEdit(QWidget * parent):
     this->connect(this->addItem,&QPushButton::clicked,
                   this,        &SkillEdit::slot_addItem);
     grid->addWidget(this->removeItem, 0, 4);
+    this->connect(this->removeItem, &QPushButton::clicked,
+                  this,             &SkillEdit::slot_removeItem);
     grid->addWidget(this->apply, 0, 5);
     this->connect(this->apply, &QPushButton::clicked,
                   this,        &SkillEdit::slot_responseApply);
@@ -185,7 +187,9 @@ void SkillEdit::slot_removeItem()
     if(!q.exec())
         qDebug() << q.lastError();
     this->removeItem->setEnabled(false);
-    m
+    auto name = this->tableModel->data(index.sibling(index.row(), 0), Qt::DisplayRole);
+    this->input->setText("");
+    this->input->setText(name.toString());
 }
 
 void SkillEdit::slot_clearStatus()

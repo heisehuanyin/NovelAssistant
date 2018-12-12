@@ -79,21 +79,30 @@ qlonglong SuperDateTool::dateEdit()
         this->editList.at(i)->setText(QString("%1").arg(val));
     }
     exec();
-    return this->toLongLong();
+    qlonglong number = 0;
+    for(int i=0; i<this->baseList.size(); ++i){
+        auto base = baseList.at(i).second;
+        auto value = editList.at(i)->text().toLongLong();
+
+        if(this->item_not0.contains(baseList.at(i).first)){
+            value -= 1;
+        }
+        number += value * base;
+    }
+    return number;
 }
 
 qlonglong SuperDateTool::toLongLong()
 {
     qlonglong number = 0;
     for(int i=0; i<this->baseList.size(); ++i){
-        auto base = baseList.at(i).second;
-        auto value = editList.at(i)->text().toLongLong();
+        auto baseNum = baseList.at(i).second;
+        auto value = this->innerValues.value(baseList.at(i).first);
+
         if(value < 0)
             value -= 1;
-        if(this->item_not0.contains(baseList.at(i).first)){
-            value -= 1;
-        }
-        number += value * base;
+
+        number += value * baseNum;
     }
     return number;
 }

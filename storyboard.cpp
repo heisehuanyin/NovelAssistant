@@ -3,8 +3,9 @@
 #include <QGridLayout>
 #include <QGroupBox>
 
-UIComp::StoryBoard::StoryBoard(QWidget *parent):
+UIComp::StoryBoard::StoryBoard(qlonglong id, QWidget *parent):
     QDialog (parent),
+    characterID(id),
     charName(new QLabel),
     nodeName(new QLabel),
     time_Story(new StoryDisplay(this)),

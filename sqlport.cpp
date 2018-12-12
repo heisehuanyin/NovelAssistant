@@ -65,8 +65,8 @@ void DBInitTool::init_emptytable()
                " REFERENCES table_gtm(mark_id)"
                " ON DELETE CASCADE);");
 
-    //创建EventNode_Effect 表格
-    query.exec("CREATE TABLE table_eventnodeeffect("
+    //创建EventNode_Basic 表格
+    query.exec("CREATE TABLE table_eventnodebasic("
                "ev_node_id integer primary key  autoincrement,"
                "node_name  text,"
                "event_name text,"
@@ -110,7 +110,7 @@ void DBInitTool::init_emptytable()
                " REFERENCES table_characterbasic(char_id)"
                " ON DELETE CASCADE,"
                "CONSTRAINT cr_ene_key FOREIGN KEY(event_id)"
-               " REFERENCES table_eventnodeeffect(ev_node_id)"
+               " REFERENCES table_eventnodebasic(ev_node_id)"
                " ON DELETE CASCADE"
                ");");
 
@@ -125,7 +125,7 @@ void DBInitTool::init_emptytable()
                " REFERENCES table_characterbasic(char_id)"
                " ON DELETE CASCADE,"
                "CONSTRAINT clt_ene_key FOREIGN KEY(event_id)"
-               " REFERENCES table_eventnodeeffect(ev_node_id)"
+               " REFERENCES table_eventnodebasic(ev_node_id)"
                " ON DELETE CASCADE,"
                "CONSTRAINT clt_ll_key FOREIGN KEY(location_id)"
                " REFERENCES table_locationlist(location_id)"
@@ -145,7 +145,7 @@ void DBInitTool::init_emptytable()
                " REFERENCES table_skilllist(skill_id)"
                " ON DELETE CASCADE,"
                "CONSTRAINT cs_ene_key FOREIGN KEY(event_node)"
-               " REFERENCES table_eventnodeeffect(ev_node_id)"
+               " REFERENCES table_eventnodebasic(ev_node_id)"
                " ON DELETE CASCADE);");
 
     query.exec("CREATE TABLE table_characterpropchange("
@@ -159,7 +159,7 @@ void DBInitTool::init_emptytable()
                " REFERENCES table_characterbasic(char_id)"
                " on delete cascade,"
                "CONSTRAINT cpc_ene_key FOREIGN KEY(event_node)"
-               " REFERENCES table_eventnodeeffect(ev_node_id)"
+               " REFERENCES table_eventnodebasic(ev_node_id)"
                " ON DELETE CASCADE,"
                "CONSTRAINT cpc_pb_key FOREIGN KEY(prop)"
                " REFERENCES table_propbasic(prop_id)"
@@ -178,7 +178,7 @@ void DBInitTool::init_emptytable()
                " REFERENCES table_locationlist(location_id)"
                " ON DELETE CASCADE,"
                "CONSTRAINT lc_ene_key FOREIGN KEY(event_node)"
-               " REFERENCES table_eventnodeeffect(ev_node_id)"
+               " REFERENCES table_eventnodebasic(ev_node_id)"
                " ON DELETE CASCADE,"
                "CONSTRAINT lc_pb_key FOREIGN KEY(prop)"
                " REFERENCES table_propbasic(prop_id)"

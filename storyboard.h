@@ -14,13 +14,22 @@
 
 namespace UIComp {
 
+/**
+ * @brief 编辑角色的故事线的主要面板
+ */
 class StoryBoard: public QDialog
 {
 public:
-    explicit StoryBoard(QWidget * parent = nullptr);
+    /**
+     * @brief 新建编辑单元
+     * @param id 数据库中角色条目的绑定id
+     * @param parent 编辑器的父组件
+     */
+    explicit StoryBoard(qlonglong id, QWidget * parent = nullptr);
     virtual ~StoryBoard() override;
 
 private:
+    qlonglong characterID;
     QLabel *const charName;
     QLabel *const nodeName;
     UIComp::StoryDisplay *const time_Story;
