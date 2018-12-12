@@ -1,7 +1,11 @@
+#include "eventnodeedit.h"
 #include "storyboard.h"
 
 #include <QGridLayout>
 #include <QGroupBox>
+#include <QSqlQuery>
+#include <QSqlError>
+#include <QtDebug>
 
 UIComp::StoryBoard::StoryBoard(qlonglong id, QWidget *parent):
     QDialog (parent),
@@ -36,6 +40,9 @@ UIComp::StoryBoard::StoryBoard(qlonglong id, QWidget *parent):
     baseLayout->addWidget(this->nodeName, 0, 4, 1, 4);
 
     baseLayout->addWidget(this->time_Story, 1, 0, 11, 3);
+    this->connect(this->time_Story, &UIComp::StoryDisplay::focuse,
+                  this,             &StoryBoard::slot_Response4selection);
+
     baseLayout->addWidget(this->tabCon, 1, 3, 11, 5);
 
     auto editStory(new QWidget);
@@ -43,6 +50,8 @@ UIComp::StoryBoard::StoryBoard(qlonglong id, QWidget *parent):
     auto esBaseLayout(new QGridLayout);
     esBaseLayout->addWidget(new QLabel(tr("添加事件节点到事件阅历：")), 0, 0, 1, 3);
     esBaseLayout->addWidget(this->addEvent, 0, 3);
+    this->connect(this->addEvent,   &QPushButton::clicked,
+                  this,             &StoryBoard::slot_Response4AddEventNode);
     esBaseLayout->addWidget(this->removeEvent, 0, 4);
     esBaseLayout->addWidget(new QLabel(tr("角色身处地点")), 1, 0);
     esBaseLayout->addWidget(this->locationSelect, 1, 1, 1, 2);
@@ -77,9 +86,79 @@ UIComp::StoryBoard::StoryBoard(qlonglong id, QWidget *parent):
     relateLayout->addWidget(this->addRelation, 8, 0);
     relateLayout->addWidget(this->removeRelation, 8, 1);
     this->tabCon->addTab(edit4Relationship, "社会关系状态编辑");
+
+    QSqlQuery q;
+    q.prepare("select "
+              "name "
+              "from table_characterbasic "
+              "where char_id = :id;");
+    q.bindValue(":id", characterID);
+    if(!q.exec()){
+        qDebug() << q.lastError();
+        this->charName->setText("未知角色，sql错误");
+        return;
+    }
+    q.next();
+    this->charName->setText(q.value(0).toString());
+
+
+    q.prepare("select "
+              "enb.ev_node_id, "
+              "enb.event_name, "
+              "enb.node_name, "
+              "enb.begin_time, "
+              "enb.end_time "
+              "from table_characterlifetracker clt inner join table_eventnodebasic enb "
+              "on clt.event_id = enb.ev_node_id "
+              "where clt.char_id = :id;");
+    q.bindValue(":id", characterID);
+    if(!q.exec()){
+        qDebug() << q.lastError();
+        return;
+    }
+    while (q.next()) {
+        auto name = q.value(1).toString();
+        name += ":" + q.value(2).toString();
+
+        auto node(new UIComp::EventSymbo(name, q.value(3).toLongLong(), q.value(4).toLongLong()));
+        this->time_Story->addEvent(q.value(0).toLongLong(), node);
+    }
 }
 
 UIComp::StoryBoard::~StoryBoard()
 {
 
+}
+
+void UIComp::StoryBoard::slot_Response4selection(qlonglong id)
+{
+    qDebug() << "选择项目：" << id << endl;
+}
+
+void UIComp::StoryBoard::slot_Response4AddEventNode()
+{
+    QSqlQuery q;
+
+    auto list = UIComp::EventnodeEdit::getSelectedItems();
+    for(int i=0; i< list.size(); ++i){
+        auto target = list.at(i);
+        q.prepare("select "
+                  "event_name, "
+                  "node_name, "
+                  "begin_time, "
+                  "end_time "
+                  "from table_eventnodebasic "
+                  "where ev_node_id = :id;");
+        q.bindValue(":id", target);
+
+        if(!q.exec()){
+            qDebug() << q.lastError();
+            return;
+        }
+        q.next();
+        auto nodeName = q.value(0).toString() + ":" + q.value(1).toString();
+        auto node(new UIComp::EventSymbo(nodeName, q.value(2).toLongLong(), q.value(3).toLongLong()));
+
+        this->time_Story->addEvent(target.toLongLong(), node);
+    }
 }

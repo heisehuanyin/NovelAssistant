@@ -54,7 +54,7 @@ StoryCanvas::StoryCanvas(QWidget *parent):
 
 StoryCanvas::~StoryCanvas()
 {
-
+    this->clear();
 }
 
 void StoryCanvas::addEvent(const qlonglong idNum, EventSymbo * const symbo)
@@ -88,10 +88,16 @@ void StoryCanvas::clear()
     for(int i=0; i<colsLayout.size();){
         delete colsLayout.takeAt(i);
     }
-    this->evCon.clear();
+
+    this->focuseID = -1;
     this->timeLine.clear();
     this->paintCtrl.clear();
-    this->focuseID = -1;
+
+    auto values = this->evCon.values();
+    this->evCon.clear();
+    for(int i=0; i<values.size();){
+        delete values.takeAt(0);
+    }
 
     this->eventSymboReLayout();
 }
@@ -204,7 +210,6 @@ void StoryCanvas::paintEvent(QPaintEvent *event)
                 painter.setPen(Qt::gray);
                 painter.setBrush(QColor(0,0,0,0));
                 painter.drawRect(this->focuseRect);
-                qDebug() << this->focuseRect << endl;
             }
 
         }
@@ -336,13 +341,11 @@ void StoryDisplay::paintEvent(QPaintEvent *event){
 void StoryDisplay::slot_recieveFocuse(qlonglong inNum)
 {
     emit this->focuse(inNum);
-    qDebug() << "focuseID = " << inNum << endl;
 }
 
 void StoryDisplay::slot_recieveDeFocuse(qlonglong inNum)
 {
     emit this->deFocuse(inNum);
-    qDebug() << "deFocuseID = " << inNum << endl;
 }
 
 void StoryDisplay::slot_recieveResizeRequest()

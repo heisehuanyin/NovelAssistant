@@ -135,16 +135,18 @@ void LocationEdit::slot_queryLocation(const QString &text)
     QString execStr = "select "
                       "location_id, "
                       "corrdinate_suffix, "
-                      "location_name "
+                      "location_name, "
+                      "nickname "
                       "from table_locationlist ";
     if(text != "*" )
         execStr +=    "where location_name like '%" + text + "%' " ;
 
     execStr += "order by corrdinate_suffix;";
 
-    this->locQueryModel->setQuery(3, execStr);
+    this->locQueryModel->setQuery(4, execStr);
     this->locQueryModel->setHorizontalHeader(0, "坐标系前缀");
     this->locQueryModel->setHorizontalHeader(1, "地点名称");
+    this->locQueryModel->setHorizontalHeader(2, "地名别称");
 
     if(this->locQueryModel->rowCount(QModelIndex()) == 0){
         this->locAdd->setEnabled(true);

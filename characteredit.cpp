@@ -26,7 +26,6 @@ CharacterEdit::CharacterEdit(QWidget *const parent):
     addNick(new QPushButton(tr("增加昵称"))),
     removeNick(new QPushButton(tr("移除昵称"))),
     storyDisplay(new StoryDisplay(this)),
-    storyListModel(new QSqlQueryModel(this)),
     editStory(new QPushButton(tr("履历编辑"))),
     comment(new QTextEdit)
 {
@@ -101,11 +100,14 @@ CharacterEdit::~CharacterEdit()
 {
     delete input;
     delete table;
+    delete tableModel;
     delete addItem;
     delete removeItem;
     delete apply;
     delete birthDay;
+    delete birthEdit;
     delete deathDay;
+    delete deathEdit;
     delete nicknames;
     delete addNick;
     delete removeNick;

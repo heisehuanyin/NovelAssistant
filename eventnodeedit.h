@@ -42,8 +42,8 @@ namespace UIComp {
         QLineEdit   *const evNameInput;
         QPushButton *const birthDay,
                     *const deathDay;
-        Support::SuperDateTool *const birthStatus,
-                               *const deathStatus;
+        Support::SuperDateTool *const beginStatus,
+                               *const endStatus;
         QTextEdit   *const evNodeDesc;
         QTextEdit   *const evNodeComment;
 
@@ -59,9 +59,12 @@ namespace UIComp {
     private slots:
         void slot_queryEventNode(const QString &text);
         void slot_respond2Additem();
+        void slot_respond2Removeitem();
         void slot_targetItemChanged(const QItemSelection &, const QItemSelection &);
         void slot_editBeginTime();
         void slot_editEndTime();
+        void slot_stateChanged();
+        void slot_4Apply();
     };
 
 }

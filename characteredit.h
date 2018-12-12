@@ -38,7 +38,6 @@ namespace UIComp {
         QPushButton *const addNick;
         QPushButton *const removeNick;
         UIComp::StoryDisplay *const storyDisplay;
-        QSqlQueryModel *const storyListModel;
         QPushButton *const editStory;
         QTextEdit *const comment;
 

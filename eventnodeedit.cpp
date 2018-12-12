@@ -12,8 +12,8 @@ using namespace UIComp;
 EventnodeEdit::EventnodeEdit(QWidget *parent):
     QDialog(parent),
     input(new QLineEdit),
-    addItem(new QPushButton(tr("添加"))),
-    removeItem(new QPushButton(tr("删除"))),
+    addItem(new QPushButton(tr("添加阶段"))),
+    removeItem(new QPushButton(tr("删除阶段"))),
     apply(new QPushButton(tr("应用变更"))),
     eventTable(new QTableView),
     eventModel(new Support::HiddenIdModel(this)),
@@ -21,8 +21,8 @@ EventnodeEdit::EventnodeEdit(QWidget *parent):
     evNameInput(new QLineEdit),
     birthDay(new QPushButton(tr("xxxxx年xx月xx日"))),
     deathDay(new QPushButton(tr("xxxxx年xx月xx日"))),
-    birthStatus(new Support::SuperDateTool(this)),
-    deathStatus(new Support::SuperDateTool(this)),
+    beginStatus(new Support::SuperDateTool(this)),
+    endStatus(new Support::SuperDateTool(this)),
     evNodeDesc(new QTextEdit),
     evNodeComment(new QTextEdit),
     localTable(new QTableView),
@@ -37,14 +37,18 @@ EventnodeEdit::EventnodeEdit(QWidget *parent):
     auto bLayout(new QGridLayout);
     this->setLayout(bLayout);
 
-    bLayout->addWidget(this->input, 0, 0, 1, 2);
+    bLayout->addWidget(this->input, 0, 0, 1, 4);
     this->connect(this->input, &QLineEdit::textChanged,
                   this,        &EventnodeEdit::slot_queryEventNode);
-    bLayout->addWidget(this->addItem, 0, 2);
+    bLayout->addWidget(this->addItem, 0, 4);
     this->connect(this->addItem, &QPushButton::clicked,
                   this,          &EventnodeEdit::slot_respond2Additem);
-    bLayout->addWidget(this->removeItem, 0, 3);
+    bLayout->addWidget(this->removeItem, 0, 5);
+    this->connect(this->removeItem, &QPushButton::clicked,
+                  this,             &EventnodeEdit::slot_respond2Removeitem);
     bLayout->addWidget(this->apply, 0, 8);
+    this->connect(this->apply,  &QPushButton::clicked,
+                  this,         &EventnodeEdit::slot_4Apply);
 
     bLayout->addWidget(eventTable, 1, 0, 10, 4);
     this->eventTable->setModel(this->eventModel);
@@ -74,6 +78,8 @@ EventnodeEdit::EventnodeEdit(QWidget *parent):
 
     panel_1_layout->addWidget(new QLabel(tr("名称：")));
     panel_1_layout->addWidget(this->evNameInput, 0, 1, 1, 2);
+    this->connect(this->evNameInput,    &QLineEdit::textChanged,
+                  this,                 &EventnodeEdit::slot_stateChanged);
 
     auto time(new QGroupBox(tr("始末时间")));
     auto inb(new QGridLayout);
@@ -93,13 +99,16 @@ EventnodeEdit::EventnodeEdit(QWidget *parent):
     comments->setLayout(__layout);
     __layout->addWidget(this->evNodeComment);
     panel_1_layout->addWidget(comments, 0, 3, 4, 2);
+    this->connect(this->evNodeComment,  &QTextEdit::textChanged,
+                  this,                 &EventnodeEdit::slot_stateChanged);
 
     auto evndesc(new QGroupBox(tr("事件阶段描述")));
     auto _layout(new QGridLayout);
     evndesc->setLayout(_layout);
     _layout->addWidget(this->evNodeDesc);
     panel_1_layout->addWidget(evndesc, 4, 0, 4, 5);
-
+    this->connect(this->evNodeDesc, &QTextEdit::textChanged,
+                  this,             &EventnodeEdit::slot_stateChanged);
 
 
     auto panel_2 = new QWidget(this);
@@ -138,13 +147,15 @@ void EventnodeEdit::slot_queryEventNode(const QString &text)
     this->addItem->setEnabled(false);
     this->removeItem->setEnabled(false);
     this->apply->setEnabled(false);
-    if(text == QString())
+    if(text == QString()){
+        this->eventModel->clear();
         return;
+    }
     QString execStr = "select "
                       "ev_node_id, "
                       "event_name, "
                       "node_name, "
-                      "node_desc "
+                      "comment "
                       "from table_eventnodebasic ";
     if(text != "*"){
         execStr += "where event_name like '%"+text+"%' ";
@@ -153,7 +164,7 @@ void EventnodeEdit::slot_queryEventNode(const QString &text)
     this->eventModel->setQuery(4, execStr, 0);
     this->eventModel->setHorizontalHeader(0, "事件名称");
     this->eventModel->setHorizontalHeader(1, "阶段名称");
-    this->eventModel->setHorizontalHeader(2, "阶段简述");
+    this->eventModel->setHorizontalHeader(2, "阶段备注");
 
     if(this->eventModel->rowCount(QModelIndex()) == 0){
         if(text != "*")
@@ -161,6 +172,8 @@ void EventnodeEdit::slot_queryEventNode(const QString &text)
     }else{
         this->addItem->setEnabled(false);
     }
+
+    this->eventTable->resizeColumnsToContents();
 }
 
 void EventnodeEdit::slot_respond2Additem()
@@ -183,19 +196,36 @@ void EventnodeEdit::slot_respond2Additem()
 
     QSqlQuery q;
     q.prepare("insert into table_eventnodebasic "
-              "(node_name, event_name, begin_time, end_time, node_desc) "
-              "values(:nName, :eName, :begin, :end, :desc);");
+              "(node_name, event_name, begin_time, end_time, node_desc, comment) "
+              "values('新节点', :eName, 0, 1, '待输入', '无备注');");
     q.bindValue(":eName", eName);
-    q.bindValue(":nName", "新节点");
-    q.bindValue(":begin", 0);
-    q.bindValue(":end", 1);
-    q.bindValue(":desc", "待输入");
 
     if(!q.exec()){
         qDebug() << q.lastError();
     }
     this->input->setText("");
     this->input->setText(eName);
+}
+
+void EventnodeEdit::slot_respond2Removeitem()
+{
+    auto index = this->eventTable->currentIndex();
+    if(!index.isValid()){
+        return;
+    }
+    auto id = this->eventModel->oppositeID(index);
+    QSqlQuery q;
+    q.prepare("delete "
+              "from table_eventnodebasic "
+              "where ev_node_id = :id;");
+    q.bindValue(":id", id);
+    if(!q.exec())
+        qDebug() << q.lastError();
+    auto name = this->eventModel->data(index.sibling(index.row(), 0), Qt::DisplayRole);
+    this->input->setText("");
+    this->input->setText(name.toString());
+
+    this->removeItem->setEnabled(false);
 }
 
 void EventnodeEdit::slot_targetItemChanged(const QItemSelection &, const QItemSelection &)
@@ -215,7 +245,8 @@ void EventnodeEdit::slot_targetItemChanged(const QItemSelection &, const QItemSe
               "begin_time, "
               "end_time, "
               "node_desc, "
-              "node_name "
+              "node_name, "
+              "comment "
               "from table_eventnodebasic "
               "where ev_node_id = :id;");
     q.bindValue(":id", idvar);
@@ -226,41 +257,84 @@ void EventnodeEdit::slot_targetItemChanged(const QItemSelection &, const QItemSe
     }
     q.next();
     this->evNodeDesc->setText(q.value(2).toString());
-    this->birthStatus->resetDate(q.value(0).toLongLong());
+    this->beginStatus->resetDate(q.value(0).toLongLong());
     this->evNameInput->setText(q.value(3).toString());
-    auto str1 = birthStatus->toString();
+    auto str1 = beginStatus->toString();
     this->birthDay->setText(str1);
-    this->deathStatus->resetDate(q.value(1).toLongLong());
-    str1 = deathStatus->toString();
+    this->endStatus->resetDate(q.value(1).toLongLong());
+    str1 = endStatus->toString();
     this->deathDay->setText(str1);
+    this->evNodeComment->setText(q.value(4).toString());
 
     this->birthDay->setEnabled(true);
     this->deathDay->setEnabled(true);
 
+    this->apply->setEnabled(false);
 }
 
 void EventnodeEdit::slot_editBeginTime()
 {
-    auto time_value = this->birthStatus->dateEdit();
-    if(time_value > this->deathStatus->toLongLong()){
+    auto time_value = this->beginStatus->dateEdit();
+    if(time_value > this->endStatus->toLongLong()){
         QMessageBox::critical(this, "date error", "起始日期不可晚于终末日期！");
         return;
     }
-    this->birthStatus->resetDate(time_value);
-    this->birthDay->setText(this->birthStatus->toString());
-    this->apply->setEnabled(true);
+    this->beginStatus->resetDate(time_value);
+    this->birthDay->setText(this->beginStatus->toString());
+    this->slot_stateChanged();
 }
 
 void EventnodeEdit::slot_editEndTime()
 {
-    auto time_value = this->deathStatus->dateEdit();
-    if(this->birthStatus->toLongLong() > time_value){
+    auto time_value = this->endStatus->dateEdit();
+    if(this->beginStatus->toLongLong() > time_value){
         QMessageBox::critical(this, "date error", "起始日期不可晚于终末日期！");
         return;
     }
-    this->deathStatus->resetDate(time_value);
-    this->deathDay->setText(this->deathStatus->toString());
+    this->endStatus->resetDate(time_value);
+    this->deathDay->setText(this->endStatus->toString());
+    this->slot_stateChanged();
+}
+
+void EventnodeEdit::slot_stateChanged()
+{
     this->apply->setEnabled(true);
+}
+
+void EventnodeEdit::slot_4Apply()
+{
+    auto index = this->eventTable->currentIndex();
+    if(!index.isValid())
+        return;
+    auto id = this->eventModel->oppositeID(index);
+
+    auto nodeName = this->evNameInput->text();
+    auto beginNum = this->beginStatus->toLongLong();
+    auto endNum = this->endStatus->toLongLong();
+    auto nodeComment = this->evNodeComment->toPlainText();
+    auto nodeDesc = this->evNodeDesc->toPlainText();
+
+
+    QSqlQuery q;
+    q.prepare("update table_eventnodebasic "
+              "set "
+              "node_name = :nName, "
+              "begin_time = :btime, "
+              "end_time = :etime, "
+              "node_desc = :desc, "
+              "comment = :cmt "
+              "where ev_node_id = :id ;" );
+    q.bindValue(":nName", nodeName);
+    q.bindValue(":btime", beginNum);
+    q.bindValue(":etime", endNum);
+    q.bindValue(":desc", nodeDesc);
+    q.bindValue(":cmt", nodeComment);
+    q.bindValue(":id", id);
+    if(!q.exec())
+        qDebug() << q.lastError();
+    auto evname = this->eventModel->data(index.sibling(index.row(), 0), Qt::DisplayRole);
+    this->input->setText("");
+    this->input->setText(evname.toString());
 }
 
 

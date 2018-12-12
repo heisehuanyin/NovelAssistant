@@ -44,15 +44,17 @@ private:
                 *const removeProp;
     QTableView  *const propTable;
 
-
     QPushButton *const addSkill,
                 *const removeSkill;
     QTableView  *const skillTable;
 
-
     QPushButton *const addRelation,
                 *const removeRelation;
     QTableView  *const relationTable;
+
+private slots:
+    void slot_Response4selection(qlonglong id);
+    void slot_Response4AddEventNode();
 };
 
 }
