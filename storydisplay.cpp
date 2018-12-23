@@ -124,9 +124,9 @@ void StoryCanvas::paintEvent(QPaintEvent *event)
     painter.setFont(font);
     painter.translate(3,2);
 
+    //以节点截断为基础，渐次绘制
     for(int i=0; i<this->timeLine.size()-1 ; ++i){
         auto targetPoint = this->timeLine.at(i);
-        auto nextPoint = this->timeLine.at(i+1);
 
         int colIndex=0;
         for(;colIndex < colsLayout.size(); ++colIndex){
@@ -137,8 +137,9 @@ void StoryCanvas::paintEvent(QPaintEvent *event)
                 paintCtrl.insert(colIndex, targetEvent);
             }
 
-            if(targetEvent->startTime()->time() > targetPoint->time() ||
-                    targetEvent->endTime()->time() < nextPoint->time()){
+            int tStartIndex = this->timeLine.indexOf(targetEvent->startTime());
+            int tEndIndex = this->timeLine.indexOf(targetEvent->endTime());
+            if(tStartIndex > i || tEndIndex < i+1){
                 continue;
             }
 
@@ -153,7 +154,8 @@ void StoryCanvas::paintEvent(QPaintEvent *event)
             QPointF secondP2(secondP1.x() + EventWidth ,secondP1.y() + EventWidth);
 
 
-            if(targetPoint->time() == targetEvent->startTime()->time()){
+            //如果是事件开始则绘制圆头
+            if(i == tStartIndex){
                 path.addEllipse(QRectF(firstP1, firstP2));
 
                 QPen pen(Qt::black, LineWidth, Qt::DotLine);
@@ -175,8 +177,11 @@ void StoryCanvas::paintEvent(QPaintEvent *event)
             }else {
                 path.addRect(QRectF(firstP1, firstP2));
             }
+
             path.addRect(QRectF(middleP1, middleP2));
-            if(nextPoint->time() == targetEvent->endTime()->time()){
+
+            //如果是事件结束则绘制圆头
+            if(i+1 == tEndIndex){
                 path.addEllipse(QRectF(secondP1, secondP2));
 
                 auto colTarget = colsLayout.at(colIndex);
