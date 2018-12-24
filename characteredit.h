@@ -52,6 +52,7 @@ namespace UIComp {
         void slot_addNickName();
         void slot_removeNickName();
         void slot_editCharcterStory();
+        void slot_statusChanged();
     };
 }
 

@@ -60,9 +60,13 @@ void SuperDateTool::resetDate(qlonglong days)
         qlonglong times = days / refp.second;
         days = days % refp.second;
 
-        if(days < 0){
-            days = refp.second + days;
+        if(times <= 0){
+            if(days < 0){
+                times -= 1;
+                days += refp.second;
+            }
         }
+
         this->innerValues.insert(refp.first, times);
     }
 
@@ -98,9 +102,6 @@ qlonglong SuperDateTool::toLongLong()
     for(int i=0; i<this->baseList.size(); ++i){
         auto baseNum = baseList.at(i).second;
         auto value = this->innerValues.value(baseList.at(i).first);
-
-        if(value < 0)
-            value -= 1;
 
         number += value * baseNum;
     }

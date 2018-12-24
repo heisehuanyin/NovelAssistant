@@ -126,7 +126,6 @@ void StoryCanvas::paintEvent(QPaintEvent *event)
 
     //以节点截断为基础，渐次绘制
     for(int i=0; i<this->timeLine.size()-1 ; ++i){
-        auto targetPoint = this->timeLine.at(i);
 
         int colIndex=0;
         for(;colIndex < colsLayout.size(); ++colIndex){

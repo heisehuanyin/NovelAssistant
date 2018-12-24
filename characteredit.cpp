@@ -93,6 +93,8 @@ CharacterEdit::CharacterEdit(QWidget *const parent):
     auto grid4(new QGridLayout);
     group4->setLayout(grid4);
     grid4->addWidget(this->comment);
+    this->connect(this->comment,    &QTextEdit::textChanged,
+                  this,             &CharacterEdit::slot_statusChanged);
 
 }
 
@@ -224,6 +226,7 @@ void CharacterEdit::slot_birthEdit()
     auto dateStr = birthEdit->toString();
     this->birthDay->setText(dateStr);
     this->apply->setEnabled(true);
+    this->slot_statusChanged();
 }
 
 void CharacterEdit::slot_deathEdit()
@@ -237,6 +240,7 @@ void CharacterEdit::slot_deathEdit()
     auto dataStr = deathEdit->toString();
     this->deathDay->setText(dataStr);
     this->apply->setEnabled(true);
+    this->slot_statusChanged();
 }
 
 void CharacterEdit::slot_addNickName()
@@ -244,6 +248,7 @@ void CharacterEdit::slot_addNickName()
     this->nicknames->addItem("双击修改");
     auto item = this->nicknames->item(nicknames->count()-1);
     item->setFlags(item->flags()|Qt::ItemIsEditable);
+    this->slot_statusChanged();
 }
 
 void CharacterEdit::slot_removeNickName()
@@ -254,6 +259,7 @@ void CharacterEdit::slot_removeNickName()
     if(!x)
         return;
     delete x;
+    this->slot_statusChanged();
 }
 
 void CharacterEdit::slot_responseItemSelection(const QItemSelection &, const QItemSelection &)
@@ -317,6 +323,7 @@ void CharacterEdit::slot_responseItemSelection(const QItemSelection &, const QIt
     }
 
     this->removeItem->setEnabled(true);
+    this->apply->setEnabled(false);
 }
 
 void CharacterEdit::slot_editCharcterStory()
@@ -328,6 +335,12 @@ void CharacterEdit::slot_editCharcterStory()
 
     auto dialog(new StoryBoard(id.toLongLong(), this));
     dialog->exec();
+    this->apply->setEnabled(true);
+}
+
+void CharacterEdit::slot_statusChanged()
+{
+    this->apply->setEnabled(true);
 }
 
 
