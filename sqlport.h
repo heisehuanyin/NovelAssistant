@@ -14,7 +14,7 @@ namespace Support {
 
     private:
         bool createConnection();
-        void init_emptytable();
+        void init_emptytable(QSqlDatabase db);
     };
 
 }

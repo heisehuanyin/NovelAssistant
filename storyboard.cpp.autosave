@@ -145,7 +145,20 @@ void UIComp::StoryBoard::displayCharacterLifetracker(qlonglong id)
 
 void UIComp::StoryBoard::displayEventDetial(qlonglong eventId)
 {
-
+    if(eventId == -1){
+        this->nodeName->setText("");
+        this->locationSelect->clear();
+        this->evNode2Char_Desc->setText("");
+        
+        
+    }
+    //地点和简述
+    
+    //道具
+    
+    //技能
+    
+    //社会关系
 }
 
 void UIComp::StoryBoard::slot_Response4Focuse(qlonglong id)

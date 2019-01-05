@@ -314,6 +314,7 @@ void CharacterEdit::slot_responseItemSelection(const QItemSelection &, const QIt
         qDebug() << q.lastError();
         return;
     }
+    this->storyDisplay->clear();
     while (q.next()) {
         auto name = q.value(1).toString();
         name += ":" + q.value(2).toString();

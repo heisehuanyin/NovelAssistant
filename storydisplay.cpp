@@ -60,20 +60,12 @@ StoryCanvas::~StoryCanvas()
 void StoryCanvas::addEvent(const qlonglong idNum, EventSymbo * const symbo)
 {
     this->evCon.insert(idNum, symbo);
-    this->timeLine.append(symbo->startTime());
-    this->timeLine.append(symbo->endTime());
-    std::sort(this->timeLine.begin(), this->timeLine.end(), compareTimePoint);
-
     this->eventSymboReLayout();
 }
 
 void StoryCanvas::removeEvent(const qlonglong idNum)
 {
-    auto target = evCon.value(idNum);
-    this->timeLine.removeOne(target->startTime());
-    this->timeLine.removeOne(target->endTime());
     this->evCon.remove(idNum);
-
     this->eventSymboReLayout();
 }
 
@@ -112,17 +104,24 @@ void StoryCanvas::paintEvent(QPaintEvent *event)
     }
     auto startPoint = this->timeLine.first();
     auto lastPoint = this->timeLine.last();
-    auto colorScale = 256*256*256.0;
+    auto colorScale = 255*255*255.0;
     auto colorStep = colorScale/(lastPoint->time() - startPoint->time());
 
+
+
     QPainter painter(this);
+
     painter.setRenderHint(QPainter::Antialiasing);
     painter.setBrush(Qt::white);
     painter.drawRect(0,0, width(), height());
+
     QFont font = painter.font();
     font.setPixelSize(CharWidth);
     painter.setFont(font);
+
     painter.translate(3,2);
+
+
 
     //以节点截断为基础，渐次绘制
     for(int i=0; i<this->timeLine.size()-1 ; ++i){
@@ -197,13 +196,13 @@ void StoryCanvas::paintEvent(QPaintEvent *event)
             }
 
             auto timeSpan = targetEvent->endTime()->time() - targetEvent->startTime()->time();
-            auto colorNum = (int)colorStep * timeSpan;
+            auto colorNum = colorStep * timeSpan;
 
-            auto valR = (int)colorNum / (256*256);
-            auto valG = (int)(colorNum % (256*256)) / 256;
-            auto valB = (int)(colorNum % (256*256)) % 256;
+            auto valR =(int) (colorNum) / (255*255);
+            auto valG =(int) (colorNum - valR*255*255) / 255;
+            auto valB =(int) (colorNum - valR*255*255 - valG*255) / 255;
 
-            QColor c(255 - valR,255 - valG,255 - valB);
+            QColor c(valR,valG,valB);
 
             painter.setBrush(c);
             QPen pen(c);
@@ -223,43 +222,38 @@ void StoryCanvas::paintEvent(QPaintEvent *event)
 void StoryCanvas::mousePressEvent(QMouseEvent *event)
 {
     auto point = event->pos();
-    auto col = point.x() / (EventWidth+3);
-    int colIndex = (int)col;
-    auto row = point.y() / EventWidth;
-    int rowIndex = (int)row;
-    auto node = timeLine.at(rowIndex);
-    if(colIndex >= this->colsLayout.size()){
-        if(this->focuseID != -1){
-            emit this->deFocuse(this->focuseID);
-            this->focuseID = -1;
-        }
-        return;
-    }
-    auto colist = this->colsLayout.at(colIndex);
 
-    int i=0;
-    for(; i<colist->size(); ++i){
-        auto targetEvent = colist->at(i);
+    auto colIndex =(int) (point.x() / (EventWidth+3));
+    auto rowIndex =(int) (point.y() / EventWidth);
 
-        if(targetEvent->startTime()->time() <= node->time()&&
-                targetEvent->endTime()->time() >= node->time()){
-            auto x = this->evCon.keys(targetEvent);
-            this->focuseID = x.at(0);
-            auto nodeSpan = this->timeLine.indexOf(targetEvent->endTime()) - this->timeLine.indexOf(targetEvent->startTime()) + 1;
-            QPointF ltop(colIndex * (EventWidth + 3) -1, this->timeLine.indexOf(targetEvent->startTime()) * EventWidth);
-            this->focuseRect = QRectF(ltop, QSizeF(EventWidth + 2, nodeSpan * EventWidth));
+    if(colIndex < this->colsLayout.size()){
+        auto colist = this->colsLayout.at(colIndex);
 
-            emit this->focuse(this->focuseID);
-            break;
+        for(int i=0; i<colist->size(); ++i){
+            auto targetEvent = colist->at(i);
+            auto startIndex = timeLine.indexOf(targetEvent->startTime());
+            auto endIndex = timeLine.indexOf(targetEvent->endTime());
+
+            if(startIndex <= rowIndex && endIndex >= rowIndex){
+                auto x = this->evCon.keys(targetEvent);
+                this->focuseID = x.at(0);
+                auto nodeSpan = endIndex - startIndex + 1;
+                QPointF ltop(colIndex * (EventWidth + 3) -1, this->timeLine.indexOf(targetEvent->startTime()) * EventWidth);
+                this->focuseRect = QRectF(ltop, QSizeF(EventWidth + 2, nodeSpan * EventWidth));
+
+                emit this->focuse(this->focuseID);
+                this->repaint();
+                return;
+            }
         }
     }
-    if(i == colist->size()){
-        this->focuseRect = QRectF(QPointF(0,0), QSizeF(0,0));
-        if(this->focuseID != -1){
-            emit this->deFocuse(this->focuseID);
-            this->focuseID = -1;
-        }
+
+    this->focuseRect = QRectF(QPointF(0,0), QSizeF(0,0));
+    if(this->focuseID != -1){
+        emit this->deFocuse(this->focuseID);
+        this->focuseID = -1;
     }
+
     this->repaint();
 }
 
@@ -271,9 +265,12 @@ void StoryCanvas::eventSymboReLayout()
 
     auto vals = this->evCon.values();
     std::sort(vals.begin(), vals.end(), compareEvSymbo);
+    this->timeLine.clear();
 
     for(int i=0; i<vals.size(); ++i){
         auto target = vals.at(i);
+        this->timeLine.append(target->startTime());
+        this->timeLine.append(target->endTime());
 
         int col=0;
         for(; col<colsLayout.size(); ++col){
@@ -292,9 +289,8 @@ void StoryCanvas::eventSymboReLayout()
             this->paintCtrl.insert(col, target);
         }
     }
+    std::sort(this->timeLine.begin(), this->timeLine.end(), compareTimePoint);
 }
-
-
 
 
 

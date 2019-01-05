@@ -8,9 +8,7 @@ DBInitTool::DBInitTool()
 {
     this->createConnection();
     auto db = QSqlDatabase::database();
-    auto tables = db.tables();
-    if(!tables.contains("table_gtm"))
-        this->init_emptytable();
+    this->init_emptytable(db);
 }
 
 DBInitTool::~DBInitTool()
@@ -29,12 +27,13 @@ bool DBInitTool::createConnection(){
     return x.exec("PRAGMA foreign_keys = ON;");
 }
 
-void DBInitTool::init_emptytable()
+void DBInitTool::init_emptytable(QSqlDatabase db)
 {
     QSqlQuery query(QSqlDatabase::database());
+    auto tables = db.tables();
 
     //创建Group_Type_Mark 表格
-    query.exec("CREATE TABLE table_gtm("
+    query.exec("CREATE TABLE IF NOT EXISTS table_gtm("
                "mark_id     integer PRIMARY KEY autoincrement,"
                "group_name  text,"
                "type_name   text,"
@@ -43,7 +42,7 @@ void DBInitTool::init_emptytable()
                "comment     text"
                ");");
 
-    query.exec("create table table_skilllist("
+    query.exec("create table IF NOT EXISTS table_skilllist("
                "skill_id integer primary key autoincrement,"
                "name text,"
                "skill_desc text,"
@@ -54,7 +53,7 @@ void DBInitTool::init_emptytable()
                " REFERENCES table_gtm(mark_id)"
                " ON DELETE CASCADE);");
 
-    query.exec("create table table_propbasic("
+    query.exec("create table IF NOT EXISTS table_propbasic("
                "prop_id integer primary key autoincrement,"
                "name text,"
                "prop_desc text,"
@@ -66,7 +65,7 @@ void DBInitTool::init_emptytable()
                " ON DELETE CASCADE);");
 
     //创建EventNode_Basic 表格
-    query.exec("CREATE TABLE table_eventnodebasic("
+    query.exec("CREATE TABLE IF NOT EXISTS table_eventnodebasic("
                "ev_node_id integer primary key  autoincrement,"
                "node_name  text,"
                "event_name text,"
@@ -75,7 +74,7 @@ void DBInitTool::init_emptytable()
                "node_desc  text,"
                "comment    text);");
 
-    query.exec("CREATE TABLE table_locationlist("
+    query.exec("CREATE TABLE IF NOT EXISTS table_locationlist("
                "location_id       integer  primary key  autoincrement,"
                "location_name     text,"
                "corrdinate_suffix text,"
@@ -87,7 +86,7 @@ void DBInitTool::init_emptytable()
                "comment           text);");
 
     //创建CharacterBasic 表格
-    query.exec("CREATE TABLE table_characterbasic("
+    query.exec("CREATE TABLE IF NOT EXISTS table_characterbasic("
                "char_id  integer primary key autoincrement,"
                "name     text,"
                "nikename text,"
@@ -96,7 +95,7 @@ void DBInitTool::init_emptytable()
                "comment  text);");
 
     //创建CharacterRelationship 表格
-    query.exec("CREATE TABLE table_characterrelationship("
+    query.exec("CREATE TABLE IF NOT EXISTS table_characterrelationship("
                "id           integer primary key autoincrement,"
                "char_id      integer,"
                "target_id    integer,"
@@ -114,7 +113,7 @@ void DBInitTool::init_emptytable()
                " ON DELETE CASCADE"
                ");");
 
-    query.exec("CREATE TABLE table_characterlifetracker("
+    query.exec("CREATE TABLE IF NOT EXISTS table_characterlifetracker("
                "id          integer primary key autoincrement,"
                "char_id     integer ,"
                "event_id    integer,"
@@ -132,7 +131,7 @@ void DBInitTool::init_emptytable()
                " ON DELETE CASCADE"
                ");");
 
-    query.exec("CREATE TABLE table_characterskills("
+    query.exec("CREATE TABLE IF NOT EXISTS table_characterskills("
                "id         integer primary key autoincrement,"
                "character  integer,"
                "skill      integer,"
@@ -148,7 +147,7 @@ void DBInitTool::init_emptytable()
                " REFERENCES table_eventnodebasic(ev_node_id)"
                " ON DELETE CASCADE);");
 
-    query.exec("CREATE TABLE table_characterpropchange("
+    query.exec("CREATE TABLE IF NOT EXISTS table_characterpropchange("
                "id         integer primary key autoincrement,"
                "char_id    integer,"
                "event_node integer,"
@@ -165,7 +164,7 @@ void DBInitTool::init_emptytable()
                " REFERENCES table_propbasic(prop_id)"
                " ON DELETE CASCADE);");
 
-    query.exec("create table table_locationchange("
+    query.exec("create table IF NOT EXISTS table_locationchange("
                "id            integer primary key autoincrement,"
                "location      integer,"
                "event_node    integer,"
@@ -183,29 +182,33 @@ void DBInitTool::init_emptytable()
                "CONSTRAINT lc_pb_key FOREIGN KEY(prop)"
                " REFERENCES table_propbasic(prop_id)"
                " ON DELETE CASCADE);");
-    query.exec("create table table_timeformat ("
-               "id integer primary key autoincrement,"
-               "_index integer,"
-               "unit text,"
-               "base integer,"
-               "not_0 text,"
-               "comment text"
-               ");");
-    query.exec("insert into table_timeformat "
-               "(_index, unit, base, not_0, comment)"
-               "values(0, '日', 1, 'yes', '每个base数值都是以天为转换基础');");
-    query.exec("insert into table_timeformat "
-               "(_index, unit, base, not_0, comment)"
-               "values(1, '月', 30, 'yes', '每个base数值都是以天为转换基础');");
-    query.exec("insert into table_timeformat "
-               "(_index, unit, base, comment)"
-               "values(2, '年', 360, '每个base数值都是以天为转换基础');");
-    query.exec("insert into table_timeformat "
-               "(_index, unit, base, comment)"
-               "values(3, '纪', 36000, '每个base数值都是以天为转换基础');");
-    query.exec("insert into table_timeformat "
-               "(_index, unit, base, comment)"
-               "values(4, '元', 36000000, '每个base数值都是以天为转换基础');");
+
+    if(!tables.contains("table_timeformat")){
+        query.exec("create table table_timeformat ("
+                   "id integer primary key autoincrement,"
+                   "_index integer,"
+                   "unit text,"
+                   "base integer,"
+                   "not_0 text,"
+                   "comment text"
+                   ");");
+
+        query.exec("insert into table_timeformat "
+                   "(_index, unit, base, not_0, comment)"
+                   "values(0, '日', 1, 'yes', '每个base数值都是以天为转换基础');");
+        query.exec("insert into table_timeformat "
+                   "(_index, unit, base, not_0, comment)"
+                   "values(1, '月', 30, 'yes', '每个base数值都是以天为转换基础');");
+        query.exec("insert into table_timeformat "
+                   "(_index, unit, base, comment)"
+                   "values(2, '年', 360, '每个base数值都是以天为转换基础');");
+        query.exec("insert into table_timeformat "
+                   "(_index, unit, base, comment)"
+                   "values(3, '纪', 36000, '每个base数值都是以天为转换基础');");
+        query.exec("insert into table_timeformat "
+                   "(_index, unit, base, comment)"
+                   "values(4, '元', 36000000, '每个base数值都是以天为转换基础');");
+    }
 }
 
 
