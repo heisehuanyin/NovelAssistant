@@ -23,6 +23,12 @@ namespace UIComp {
         explicit CharacterEdit(QWidget * const parent=nullptr);
         virtual ~CharacterEdit();
 
+        /**
+         * @brief 获取选中条目id集合
+         * @return ID集合
+         */
+        static QList<QVariant> getSelectedItems();
+
     private:
         QLineEdit *const input;
         QTableView *const table;

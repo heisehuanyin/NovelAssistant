@@ -118,6 +118,14 @@ CharacterEdit::~CharacterEdit()
     delete comment;
 }
 
+QList<QVariant> CharacterEdit::getSelectedItems()
+{
+    auto instance(new CharacterEdit);
+    instance->tableModel->changeCheckable(true);
+    instance->exec();
+    return instance->tableModel->selectedRecordIDs();
+}
+
 void CharacterEdit::slot_queryCharacter(const QString &text)
 {
     this->tableModel->clear();
