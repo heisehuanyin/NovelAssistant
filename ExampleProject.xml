@@ -1,0 +1,23 @@
+<? xml version="1.0" ?>
+<project encoding="utf-8">
+    <setting>
+        <item key="xxxx" value="yyyy" />
+    </setting>
+    <content name="示例项目" ref="info">
+        <group name="第一卷 上下" ref="gone">
+            <file name="第一章 ore" ref="fone" />
+        </group>
+        <group name="第二卷 上下" ref="gtwo">
+            <file name="第一章 ore" ref="ftwo" />
+        </group>
+        <group name="第三卷 上下" ref="gthree">
+            <file name="第一章 ore" ref="fthree" />
+        </group>
+        <group name="第四卷 上下" ref="gfour">
+            <file name="第一章 ore" ref="ffour" />
+        </group>
+        <group name="第五卷 上下" ref="gfive">
+            <file name="第一章 ore" ref="ffive" />
+        </group>
+    </content>
+</project>

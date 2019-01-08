@@ -6,9 +6,11 @@
 #include <QScrollArea>
 #include <QSplitter>
 #include <QTableWidget>
+#include <QTextEdit>
 #include <QToolBar>
 #include <QToolBox>
 #include <QTreeView>
+namespace UIComp {
 
 class MainWindow : public QMainWindow
 {
@@ -18,18 +20,17 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+    void openEmptyWin();
+    void addDocumentView(QTextEdit *view);
+
 private:
-    QMenuBar *const menubar;
     QToolBar *const toolsbar;
     QSplitter *const mainSplit;
     QTreeView *const pjtSelect;
     QTabWidget *const editStack;
-    //QScrollArea *const rightView;
     QSplitter *const rightSplit;
 
-private slots:
-    void exit();
-    void slot_ResponseToolsAct(QAction* act);
 };
+}
 
 #endif // MAINWINDOW_H

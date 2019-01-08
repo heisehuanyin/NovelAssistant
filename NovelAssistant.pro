@@ -40,7 +40,9 @@ SOURCES += \
     storyboard.cpp \
     storydisplay.cpp \
     superdatetool.cpp \
-    docmanager.cpp
+    docmanager.cpp \
+    edserver.cpp \
+    projectsymbo.cpp
 
 HEADERS += \
     characteredit.h \
@@ -55,7 +57,9 @@ HEADERS += \
     storyboard.h \
     storydisplay.h \
     superdatetool.h \
-    docmanager.h
+    docmanager.h \
+    edserver.h \
+    projectsymbo.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -66,4 +70,7 @@ DISTFILES += \
     小说控制模型.md \
     README.md \
     WsNovelAssistant.epgz \
-    NovelAssistant基本策划.docx
+    NovelAssistant基本策划.docx \
+    ExampleProject.xml \
+    NovelAssistant基本策划 - 1.0基本.docx \
+    NovelAssistant基本策划 - 2.0增改.docx

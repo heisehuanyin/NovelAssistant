@@ -145,6 +145,9 @@ namespace UIComp {
 
         void eventSymboReLayout();
 
+        static bool compareEvSymbo(EventSymbo* ev1, EventSymbo*ev2);
+        static bool compareTimePoint(TimePoint* p1, TimePoint* p2);
+
 
     };
 

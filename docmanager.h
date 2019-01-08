@@ -22,20 +22,12 @@ public:
 
     /**
      * @brief 打开指定路径文档（不含后缀），如果文档已经打开，那么返回打开实例
+     * @warning 如果文档路径不存在，会新建一个空白文档
      * @param filePath 文档路径,不含后缀
      * @param view 视图组件指针
-     * @return 操作码：0，成功；-1，路径错误；-2，其他错误
+     * @return 操作码：0，成功；-1，打开失败；-2，其他错误
      */
     int openDocument(QString filePath, QTextEdit **view);
-
-    /**
-     * @brief 新建空白文档，并打开（路径名不含后缀）
-     * @param filePath 指定文档路径,此路径必须合法，函数不检查
-     * @param realPath 返回实际文档路径
-     * @param view 视图实例
-     * @return 操作状态：0，新建成功；1，目标文件存在，创建其他文件，实际路径有realPath返回；-1，失败
-     */
-    int newDocument(QString filePath, QString *realPath, QTextEdit **view);
 
     /**
      * @brief 保存指定文档

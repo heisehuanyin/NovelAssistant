@@ -16,13 +16,16 @@ DocManager::~DocManager()
 
 int DocManager::openDocument(QString filePath, QTextEdit **view)
 {
-    QFile file(filePath);
-    if(!file.exists())
-        return -1;
-
     if(this->docCon.contains(filePath)){
         *view = this->docCon.value(filePath);
         return 0;
+    }
+
+    QFile file(filePath);
+    if(!file.exists()){
+        if(!file.open(QIODevice::WriteOnly | QIODevice::Text))
+            return -1;
+        file.close();
     }
 
     auto v = new QTextEdit;
@@ -35,29 +38,6 @@ int DocManager::openDocument(QString filePath, QTextEdit **view)
         v->append(line);
     }
     file.close();
-    return 0;
-}
-
-int DocManager::newDocument(QString filePath, QString *realPath, QTextEdit **view)
-{
-    qsrand((unsigned)time(nullptr));
-
-    QFileInfo info(filePath+".txt");
-    while (info.exists()) {
-        filePath +=  QString("%1").arg(qrand());
-        info.setFile(filePath+".txt");
-    }
-
-    *realPath = info.canonicalFilePath();
-
-    QFile file(*realPath);
-    if(!file.open(QIODevice::WriteOnly | QIODevice::Text))
-        return -1;
-    file.close();
-
-    if(int x = this->openDocument(*realPath, view) != 0)
-        return x;
-
     return 0;
 }
 

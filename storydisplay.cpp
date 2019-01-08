@@ -33,16 +33,6 @@ TimePoint *EventSymbo::startTime() const {return this->start;}
 
 TimePoint *EventSymbo::endTime() const {return this->end;}
 
-bool compareTimePoint(TimePoint *t1, TimePoint *t2){
-    if(t1->time() < t2->time())
-        return true;
-    return false;
-}
-bool compareEvSymbo(EventSymbo *ev1, EventSymbo *ev2){
-    return compareTimePoint(ev1->startTime(), ev2->startTime());
-}
-
-
 StoryCanvas::StoryCanvas(QWidget *parent):
     QWidget (parent),
     focuseID(-1),
@@ -264,7 +254,7 @@ void StoryCanvas::eventSymboReLayout()
     }
 
     auto vals = this->evCon.values();
-    std::sort(vals.begin(), vals.end(), compareEvSymbo);
+    std::sort(vals.begin(), vals.end(), StoryCanvas::compareEvSymbo);
     this->timeLine.clear();
 
     for(int i=0; i<vals.size(); ++i){
@@ -277,7 +267,7 @@ void StoryCanvas::eventSymboReLayout()
             auto colTarget = colsLayout.at(col);
 
             auto last = colTarget->last();
-            if(compareTimePoint(last->endTime(), target->startTime())){
+            if(StoryCanvas::compareTimePoint(last->endTime(), target->startTime())){
                 colTarget->append(target);
                 break;
             }
@@ -289,7 +279,19 @@ void StoryCanvas::eventSymboReLayout()
             this->paintCtrl.insert(col, target);
         }
     }
-    std::sort(this->timeLine.begin(), this->timeLine.end(), compareTimePoint);
+    std::sort(this->timeLine.begin(), this->timeLine.end(), StoryCanvas::compareTimePoint);
+}
+
+bool StoryCanvas::compareEvSymbo(EventSymbo *ev1, EventSymbo *ev2)
+{
+    return StoryCanvas::compareTimePoint(ev1->startTime(), ev2->startTime());
+}
+
+bool StoryCanvas::compareTimePoint(TimePoint *p1, TimePoint *p2)
+{
+    if(p1->time() < p2->time())
+        return true;
+    return false;
 }
 
 
