@@ -39,7 +39,8 @@ SOURCES += \
     sqlport.cpp \
     storyboard.cpp \
     storydisplay.cpp \
-    superdatetool.cpp
+    superdatetool.cpp \
+    docmanager.cpp
 
 HEADERS += \
     characteredit.h \
@@ -53,7 +54,8 @@ HEADERS += \
     sqlport.h \
     storyboard.h \
     storydisplay.h \
-    superdatetool.h
+    superdatetool.h \
+    docmanager.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
