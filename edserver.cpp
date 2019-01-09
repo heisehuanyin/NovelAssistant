@@ -10,6 +10,7 @@
 #include "components.h"
 #include "characteredit.h"
 
+#include <QApplication>
 #include <QFileDialog>
 #include <QMessageBox>
 
@@ -45,6 +46,104 @@ void EdServer::slot_openProject()
     this->openNovelDatabase(info.path());
 }
 
+void EdServer::slot_closeProject()
+{
+    this->manager->saveAll();
+    auto list = this->manager->getAllDocuments();
+    for(int i=0; i<list.size(); ++i){
+        this->manager->closeDocumentWithoutSave(list.takeAt(i));
+    }
+    if(this->pjtSymbo->projectPath() == QString()){
+        auto filename = QFileDialog::getSaveFileName(this->mainView, tr("保存"), QDir::currentPath(), "WsNovel (*.wsnovel )");
+        this->pjtSymbo->save(filename);
+    }
+    else{
+        this->pjtSymbo->save();
+    }
+
+    delete this->pjtSymbo;
+    this->pjtSymbo = nullptr;
+
+    this->refreshUIStatus();
+}
+
+void EdServer::slot_saveProject()
+{
+    this->manager->saveAll();
+    if(this->pjtSymbo->projectPath() == QString()){
+        auto filename = QFileDialog::getSaveFileName(this->mainView, tr("保存"), QDir::currentPath(), "WsNovel (*.wsnovel )");
+        this->pjtSymbo->save(filename);
+    }
+    else{
+        this->pjtSymbo->save();
+    }
+}
+
+void EdServer::slot_openWithinProject(const QModelIndex &index)
+{
+    if(!index.isValid() || this->pjtSymbo == nullptr)
+        return;
+
+    auto model = this->pjtSymbo->getStructure();
+    auto item = model->itemFromIndex(index);
+    auto path = this->pjtSymbo->referenceFilePath(item);
+
+    QTextEdit *edit = nullptr;
+    this->manager->openDocument(path, &edit);
+    this->mainView->addDocumentView(item->text(), edit);
+}
+
+void EdServer::slot_closeTargetView(QTextEdit *view)
+{
+    auto label = this->manager->returnDocpath(view);
+    if(label == QString())
+        return;
+
+    this->manager->saveDocument(label);
+    this->manager->closeDocumentWithoutSave(label);
+}
+
+void EdServer::slot_newFileNode(const QModelIndex &index)
+{
+    if(!index.isValid())
+        return;
+
+    auto node = this->pjtSymbo->getStructure()->itemFromIndex(index);
+    if(typeid (*node) == typeid (Support::__project::FileSymbo)){
+        auto newIndex = this->pjtSymbo->newFile(tr("新章节"), index.parent());
+        this->pjtSymbo->moveNodeTo(newIndex, index.sibling(index.row()+1, index.column()));
+    }else{
+        this->pjtSymbo->newFile(tr("新章节"), index);
+    }
+}
+
+void EdServer::slot_newGroupNode(const QModelIndex &index)
+{
+    if(!index.isValid())
+        return;
+
+    auto node = this->pjtSymbo->getStructure()->itemFromIndex(index);
+    if(typeid (*node) == typeid (Support::__project::FileSymbo)){
+        auto newIndex = this->pjtSymbo->newGroup(tr("新集合"), index.parent());
+        this->pjtSymbo->moveNodeTo(newIndex, index.sibling(index.row()+1, index.column()));
+    }else{
+        this->pjtSymbo->newGroup(tr("新集合"), index);
+    }
+}
+
+void EdServer::slot_removeNode(const QModelIndex &index)
+{
+    if(!index.isValid())
+        return;
+
+    this->pjtSymbo->removeNode(index);
+}
+
+void EdServer::slot_NodeMove(const QModelIndex &from, const QModelIndex &to)
+{
+    this->pjtSymbo->moveNodeTo(from, to);
+}
+
 void EdServer::slot_ResponseToolsAct(QAction *act)
 {
     auto text = act->text();
@@ -76,7 +175,7 @@ void EdServer::slot_ResponseToolsAct(QAction *act)
 
 void EdServer::exit()
 {
-
+    QApplication::closeAllWindows();
 }
 
 EdServer::EdServer(QString title):
@@ -89,12 +188,10 @@ EdServer::EdServer(QString title):
 
 EdServer::~EdServer()
 {
-
-}
-
-Support::DocManager *EdServer::getDocumentManager()
-{
-    return this->manager;
+    delete this->dbTool;
+    delete this->manager;
+    delete this->pjtSymbo;
+    delete this->mainView;
 }
 
 void EdServer::openNovelDatabase(QString pjtPath)
@@ -102,10 +199,24 @@ void EdServer::openNovelDatabase(QString pjtPath)
     QDir::setCurrent(pjtPath);
     this->dbTool = new Support::DBInitTool;
 
-    this->refreshMenubarStatus();
+    this->refreshUIStatus();
+    this->mainView->setProjectTree(this->pjtSymbo->getStructure());
+
+    this->connect(this->mainView,   &UIComp::MainWindow::signal_openWithinProject,
+                  this,             &EdServer::slot_openWithinProject);
+    this->connect(this->mainView,   &UIComp::MainWindow::signal_closeTargetView,
+                  this,             &EdServer::slot_closeTargetView);
+    this->connect(this->mainView,   &UIComp::MainWindow::signal_newFile,
+                  this,             &EdServer::slot_newFileNode);
+    this->connect(this->mainView,   &UIComp::MainWindow::signal_newGroup,
+                  this,             &EdServer::slot_newGroupNode);
+    this->connect(this->mainView,   &UIComp::MainWindow::signal_removeNode,
+                  this,             &EdServer::slot_removeNode);
+    this->connect(this->mainView,   &UIComp::MainWindow::signal_moveNode,
+                  this,             &EdServer::slot_NodeMove);
 }
 
-void EdServer::refreshMenubarStatus()
+void EdServer::refreshUIStatus()
 {
     auto mbar = this->mainView->menuBar();
     mbar->clear();
@@ -120,9 +231,16 @@ void EdServer::refreshMenubarStatus()
     this->connect(m_opnf,   &QAction::triggered,
                   this,     &EdServer::slot_newProject);
     m_file->addAction(m_opnf);
-
+    auto m_save = new QAction(tr("保存所有"),m_file);
+    this->connect(m_save,   &QAction::triggered,
+                  this,    &EdServer::slot_saveProject);
+    m_file->addAction(m_save);
     m_file->addSeparator();
-
+    auto m_clsp = new QAction(tr("关闭项目"), m_file);
+    m_file->addAction(m_clsp);
+    this->connect(m_clsp,   &QAction::triggered,
+                  this,     &EdServer::slot_closeProject);
+    m_file->addSeparator();
     QAction* _exit = new QAction(tr("退出"), m_file);
     this->connect(_exit, &QAction::triggered, this, &EdServer::exit);
     m_file->addAction(_exit);
@@ -144,16 +262,15 @@ void EdServer::refreshMenubarStatus()
         _tools->addAction(ev_nodeE);
         this->connect(_tools, &QMenu::triggered,
                       this,   &EdServer::slot_ResponseToolsAct);
-
-        this->mainView->setHidden(true);
-        this->mainView->setHidden(false);
     }
+    this->mainView->setHidden(true);
+    this->mainView->setHidden(false);
 }
 
 void EdServer::openGraphicsModel()
 {
-    this->refreshMenubarStatus();
-    this->mainView->openEmptyWin();
+    this->refreshUIStatus();
+    this->mainView->openEmptyWindow();
 
     this->mainView->setFocus();
 }

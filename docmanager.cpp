@@ -2,6 +2,7 @@
 
 #include <QFileInfo>
 #include <QTextStream>
+#include <QDebug>
 
 using namespace Support;
 
@@ -32,8 +33,11 @@ int DocManager::openDocument(QString filePath, QTextEdit **view)
     this->docCon.insert(filePath, v);
     *view = v;
 
+    if(!file.open(QIODevice::ReadOnly | QIODevice::Text))
+        return -1;
+
     QTextStream in(&file);
-    while (!file.atEnd()) {
+    while (!in.atEnd()) {
         auto line = in.readLine();
         v->append(line);
     }
@@ -56,6 +60,10 @@ int DocManager::saveDocument(QString filePath)
     QTextStream out(&file);
     out << content;
 
+    out.flush();
+    file.flush();
+    file.close();
+
     return 0;
 }
 
@@ -68,6 +76,11 @@ int DocManager::saveAll()
             return ret;
     }
     return 0;
+}
+
+QList<QString> DocManager::getAllDocuments()
+{
+    return this->docCon.keys();
 }
 
 int DocManager::closeDocumentWithoutSave(QString filePath)

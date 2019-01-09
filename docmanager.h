@@ -43,6 +43,12 @@ public:
     int saveAll();
 
     /**
+     * @brief 获取所有打开文档
+     * @return 文档key集合
+     */
+    QList<QString> getAllDocuments();
+
+    /**
      * @brief 强制关闭指定文档，不保存
      * @warning 不保存视图内容，谨慎使用
      * @param filePath 文件路径

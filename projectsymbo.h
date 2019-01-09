@@ -23,7 +23,7 @@ namespace __project {
     class GroupSymbo : public FileSymbo{
     public:
         explicit GroupSymbo(QDomElement dom);
-        virtual ~GroupSymbo();
+        virtual ~GroupSymbo() override;
     };
 }
 
@@ -83,31 +83,35 @@ public:
     QStandardItemModel* getStructure();
 
     /**
-     * @brief 通过模型接口创建一个文件节点
-     * @return 文件节点
+     * @brief 在指定父节点下新建项目文件节点
+     * @param name 节点名称
+     * @param parent 父节点索引
+     * @return 新节点的索引
      */
-    QStandardItem* newFile(QString name);
+    QModelIndex newFile(QString name, const QModelIndex &parent);
 
     /**
-     * @brief 通过模型接口创建一个集合节点
-     * @return 集合节点
+     * @brief 在指定父节点下新建项目集合节点
+     * @param name 节点名称
+     * @param parent 父节点索引
+     * @return 新节点索引
      */
-    QStandardItem* newGroup(QString name);
+    QModelIndex newGroup(QString name, const QModelIndex &parent);
 
     /**
-     * @brief 将特定节点node插入到指定节点parent的指定位序下
-     * @param node 任意类型模型节点
-     * @param parent 必须是集合节点，如果为nullptr表示根节点
-     * @param index 次序，如果为 -1，表示append操作
+     * @brief 删除指定索引指向的节点
+     * @warning 不可删除根节点
+     * @param target 指定节点索引
      */
-    void addItemUnder(QStandardItem* node, QStandardItem* parent=nullptr, int index= -1);
+    void removeNode(const QModelIndex &target);
 
     /**
-     * @brief 移除指定节点parent下的特定节点node
-     * @param node 任意类型模型节点,且此节点必须在parent下
-     * @param parent 必须是集合节点，如果未nullptr表示根节点
+     * @brief 将from指向的节点，移动到to索引位置
+     * @warning from和to都必须是根节点的后代节点
+     * @param from 指定节点的索引
+     * @param to 目标位置索引，可以指向集合尾节点的下一个位置
      */
-    void removeItemUnder(QStandardItem* node, QStandardItem*parent=nullptr);
+    void moveNodeTo(const QModelIndex &from, const QModelIndex &to);
 
     /**
      * @brief 获取模型节点指向的文件路径
@@ -121,6 +125,45 @@ private:
     QDomDocument*const domData;
     QString pjtPath;
 
+    /**
+     * @brief 通过模型接口创建一个文件节点
+     * @return 文件节点
+     */
+    QStandardItem* newFile(QString name);
+
+    /**
+     * @brief 通过模型接口创建一个集合节点
+     * @return 集合节点
+     */
+    QStandardItem* newGroup(QString name);
+
+    /**
+     * @brief 将特定节点node插入到指定节点parent的指定位序下，两个节点都必须存在,索引小于parent.rowCount
+     * @param node 任意类型模型节点
+     * @param parent 必须是集合节点
+     * @param index 索引必须小于parent.rowCount
+     */
+    void insertItemUnder(QStandardItem* node, QStandardItem* parent, int index);
+
+    /**
+     * @brief 添加特定节点到指定父节点的尾部
+     * @param node 特定节点
+     * @param parent 指定父节点
+     */
+    void appendItemUnder(QStandardItem*node, QStandardItem* parent);
+
+    /**
+     * @brief 移除指定节点parent下的特定节点node
+     * @param node 任意类型模型节点,且此节点必须在parent下
+     * @param parent 必须是集合节点
+     */
+    void removeItemUnder(QStandardItem* node, QStandardItem*parent);
+
+    /**
+     * @brief 解析dom节点构建模型
+     * @param dom dom节点
+     * @param group 父节点节点，若为nullptr，表示此节点代表content节点
+     */
     void parseStructureDom(QDomElement dom, QStandardItem *group = nullptr);
 
 private slots:
