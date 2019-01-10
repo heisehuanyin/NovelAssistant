@@ -37,7 +37,7 @@ private slots:
     void slot_newProject();
     void slot_openProject();
     void slot_closeProject();
-    void slot_saveProject();
+    void slot_saveAll();
 
     /**
      * @brief 打开项目树中的文件

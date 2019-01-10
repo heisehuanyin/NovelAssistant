@@ -66,6 +66,8 @@ UIComp::StoryBoard::StoryBoard(qlonglong id, QWidget *parent):
     this->connect(this->addENode,   &QPushButton::clicked,
                   this,             &StoryBoard::slot_Response4AddEventNode);
     esBaseLayout->addWidget(this->removeEvent, 0, 2);
+    this->connect(this->removeEvent,&QPushButton::clicked,
+                  this,             &StoryBoard::slot_Response4RemoveEventNode);
     esBaseLayout->addWidget(new QLabel(tr("角色身处地点")), 1, 0);
     esBaseLayout->addWidget(this->locationSelect, 1, 1, 1, 2);
     esBaseLayout->addWidget(this->evNode2Char_Desc, 2, 0, 8, 3);
@@ -342,6 +344,7 @@ void UIComp::StoryBoard::displayCharacterLifetracker(qlonglong id)
     }
 
     this->eventNodeList.clear();
+    this->time_Story->clear();
     while (q.next()) {
         auto name = q.value(1).toString();
         name += ":" + q.value(2).toString();
@@ -483,6 +486,47 @@ prepareStep:
     if(!q.execBatch())
         qDebug() << q.lastError();
 
+    this->displayCharacterLifetracker(this->characterID);
+    this->displayEventDetial();
+}
+
+void UIComp::StoryBoard::slot_Response4RemoveEventNode()
+{
+    if(this->focuseEvent==-1)
+        return;
+    QSqlQuery q;
+    q.prepare("delete from table_characterlifetracker "
+              "where (char_id = :cid) and (event_id=:enode);");
+    q.bindValue(":cid", this->characterID);
+    q.bindValue(":enode", this->focuseEvent);
+    if(!q.exec()){
+        qDebug() << q.lastError();
+        return;
+    }
+    q.prepare("delete from table_characterpropchange "
+              "where (char_id=:cid) and (event_node=:enode);");
+    q.bindValue(":cid",this->characterID);
+    q.bindValue(":enode", this->focuseEvent);
+    if(!q.exec()){
+        qDebug() << q.lastError();
+        return;
+    }
+    q.prepare("delete from table_characterrelationship "
+              "where (char_id=:cid) and (event_id=:enode);");
+    q.bindValue(":cid",this->characterID);
+    q.bindValue(":enode", this->focuseEvent);
+    if(!q.exec()){
+        qDebug() << q.lastError();
+        return;
+    }
+    q.prepare("delete from table_characterskills "
+              "where(character=:cid) and (event_node=:enode);");
+    q.bindValue(":cid", this->characterID);
+    q.bindValue(":enode", this->focuseEvent);
+    if(!q.exec()){
+        qDebug() << q.lastError();
+        return;
+    }
     this->displayCharacterLifetracker(this->characterID);
     this->displayEventDetial();
 }

@@ -48,17 +48,12 @@ void EdServer::slot_openProject()
 
 void EdServer::slot_closeProject()
 {
+    this->pjtSymbo->save();
+
     this->manager->saveAll();
     auto list = this->manager->getAllDocuments();
     for(int i=0; i<list.size(); ++i){
         this->manager->closeDocumentWithoutSave(list.takeAt(i));
-    }
-    if(this->pjtSymbo->projectPath() == QString()){
-        auto filename = QFileDialog::getSaveFileName(this->mainView, tr("保存"), QDir::currentPath(), "WsNovel (*.wsnovel )");
-        this->pjtSymbo->save(filename);
-    }
-    else{
-        this->pjtSymbo->save();
     }
 
     delete this->pjtSymbo;
@@ -67,16 +62,10 @@ void EdServer::slot_closeProject()
     this->refreshUIStatus();
 }
 
-void EdServer::slot_saveProject()
+void EdServer::slot_saveAll()
 {
+    this->pjtSymbo->save();
     this->manager->saveAll();
-    if(this->pjtSymbo->projectPath() == QString()){
-        auto filename = QFileDialog::getSaveFileName(this->mainView, tr("保存"), QDir::currentPath(), "WsNovel (*.wsnovel )");
-        this->pjtSymbo->save(filename);
-    }
-    else{
-        this->pjtSymbo->save();
-    }
 }
 
 void EdServer::slot_openWithinProject(const QModelIndex &index)
@@ -218,8 +207,8 @@ void EdServer::openNovelDatabase(QString pjtPath)
 
 void EdServer::refreshUIStatus()
 {
-    auto mbar = this->mainView->menuBar();
-    mbar->clear();
+    auto temp = this->mainView->menuBar();
+    auto mbar = new QMenuBar();
 
     auto m_file = new QMenu(tr("文件"), mbar);
     mbar->addMenu(m_file);
@@ -233,7 +222,7 @@ void EdServer::refreshUIStatus()
     m_file->addAction(m_opnf);
     auto m_save = new QAction(tr("保存所有"),m_file);
     this->connect(m_save,   &QAction::triggered,
-                  this,    &EdServer::slot_saveProject);
+                  this,    &EdServer::slot_saveAll);
     m_file->addAction(m_save);
     m_file->addSeparator();
     auto m_clsp = new QAction(tr("关闭项目"), m_file);
@@ -244,6 +233,14 @@ void EdServer::refreshUIStatus()
     QAction* _exit = new QAction(tr("退出"), m_file);
     this->connect(_exit, &QAction::triggered, this, &EdServer::exit);
     m_file->addAction(_exit);
+
+    //项目未打开
+    if(this->pjtSymbo==nullptr){
+        m_save->setEnabled(false);
+    }else{
+        m_newf->setEnabled(false);
+        m_opnf->setEnabled(false);
+    }
 
     if(this->pjtSymbo != nullptr){
         QMenu* _tools = new QMenu(tr("工具"),mbar);
@@ -263,6 +260,8 @@ void EdServer::refreshUIStatus()
         this->connect(_tools, &QMenu::triggered,
                       this,   &EdServer::slot_ResponseToolsAct);
     }
+    this->mainView->setMenuBar(mbar);
+    delete temp;
     this->mainView->setHidden(true);
     this->mainView->setHidden(false);
 }

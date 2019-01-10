@@ -110,9 +110,11 @@ private slots:
     void slot_Response4Defocuse();
 
     /**
-     * @brief 调用本函数添加一个事件节点到角色的人生经历中
+     * @brief 调用本函数添加事件节点到角色的人生经历中
      */
     void slot_Response4AddEventNode();
+    void slot_Response4RemoveEventNode();
+    void slot_Response4ApplyEventChange();
 
     /**
      * @brief 响应道具增加操作
