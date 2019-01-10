@@ -27,7 +27,7 @@ void EdServer::slot_newProject()
         file.close();
     }
     this->pjtSymbo = new Support::ProjectSymbo;
-    this->pjtSymbo->save(info.filePath());
+    this->pjtSymbo->saveProject(info.filePath());
 
     this->openNovelDatabase(info.path());
 }
@@ -48,7 +48,7 @@ void EdServer::slot_openProject()
 
 void EdServer::slot_closeProject()
 {
-    this->pjtSymbo->save();
+    this->pjtSymbo->saveProject();
 
     delete this->pjtSymbo;
     this->pjtSymbo = nullptr;
@@ -58,21 +58,17 @@ void EdServer::slot_closeProject()
 
 void EdServer::slot_saveAll()
 {
-    this->pjtSymbo->save();
+    if(this->pjtSymbo)
+        this->pjtSymbo->saveProject();
 }
 
-void EdServer::slot_openWithinProject(const QModelIndex &index)
+void EdServer::slot_openItem(const QModelIndex &index)
 {
-    if(!index.isValid() || this->pjtSymbo == nullptr)
-        return;
-
-    auto model = this->pjtSymbo->getStructure();
-    auto item = model->itemFromIndex(index);
-    auto path = this->pjtSymbo->referenceFilePath(item);
-
     QTextEdit *edit = nullptr;
-    this->pjtSymbo->openDocument(path, &edit);
-    this->mainView->addDocumentView(item->text(), edit);
+    QString title;
+
+    this->pjtSymbo->openDocument(index, title, &edit);
+    this->mainView->addDocumentView(title, edit);
 }
 
 void EdServer::slot_closeTargetView(QTextEdit *view)
@@ -183,7 +179,7 @@ void EdServer::openNovelDatabase(QString pjtPath)
     this->mainView->setProjectTree(this->pjtSymbo->getStructure());
 
     this->connect(this->mainView,   &FrontEnd::signal_openWithinProject,
-                  this,             &EdServer::slot_openWithinProject);
+                  this,             &EdServer::slot_openItem);
     this->connect(this->mainView,   &FrontEnd::signal_closeTargetView,
                   this,             &EdServer::slot_closeTargetView);
     this->connect(this->mainView,   &FrontEnd::signal_newFile,
@@ -205,29 +201,26 @@ void EdServer::refreshUIStatus()
     mbar->addMenu(m_file);
     auto m_newf = new QAction(tr("打开项目"), m_file);
     m_file->addAction(m_newf);
-    this->connect(m_newf,   &QAction::triggered,
-                  this,     &EdServer::slot_openProject);
+    this->connect(m_newf,   &QAction::triggered, this,  &EdServer::slot_openProject);
     auto m_opnf = new QAction(tr("新建项目"), m_file);
-    this->connect(m_opnf,   &QAction::triggered,
-                  this,     &EdServer::slot_newProject);
+    this->connect(m_opnf,   &QAction::triggered, this,  &EdServer::slot_newProject);
     m_file->addAction(m_opnf);
     auto m_save = new QAction(tr("保存所有"),m_file);
-    this->connect(m_save,   &QAction::triggered,
-                  this,    &EdServer::slot_saveAll);
+    this->connect(m_save,   &QAction::triggered, this,  &EdServer::slot_saveAll);
     m_file->addAction(m_save);
     m_file->addSeparator();
     auto m_clsp = new QAction(tr("关闭项目"), m_file);
     m_file->addAction(m_clsp);
-    this->connect(m_clsp,   &QAction::triggered,
-                  this,     &EdServer::slot_closeProject);
+    this->connect(m_clsp,   &QAction::triggered, this,  &EdServer::slot_closeProject);
     m_file->addSeparator();
     QAction* _exit = new QAction(tr("退出"), m_file);
-    this->connect(_exit, &QAction::triggered, this, &EdServer::exit);
+    this->connect(_exit,    &QAction::triggered, this,  &EdServer::exit);
     m_file->addAction(_exit);
 
     //项目未打开
     if(this->pjtSymbo==nullptr){
         m_save->setEnabled(false);
+        m_clsp->setEnabled(false);
     }else{
         m_newf->setEnabled(false);
         m_opnf->setEnabled(false);

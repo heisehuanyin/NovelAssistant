@@ -14,14 +14,12 @@ using namespace Component;
 
 FrontEnd::FrontEnd(QWidget *parent)
     : QMainWindow(parent),
-      toolsbar(new QToolBar(this)),
       baseFrame(new QSplitter(Qt::Horizontal, this)),
       pjtStructure(new QTreeView(this)),
       contentStack(new QTabWidget(this)),
-      welcome(new QWidget),
+      welcome(this->generateWelcomePanel()),
       rightSplit(new QSplitter(Qt::Vertical, this))
 {
-    this->addToolBar(toolsbar);
     this->setCentralWidget(this->baseFrame);
     this->baseFrame->addWidget(pjtStructure);
     this->pjtStructure->setHeaderHidden(true);
@@ -42,7 +40,6 @@ FrontEnd::FrontEnd(QWidget *parent)
     this->baseFrame->setStretchFactor(1,1);
     this->baseFrame->setStretchFactor(2,0);
 
-    this->welcome = this->generateWelcomePanel();
     this->contentStack->addTab(this->welcome, "Welcome");
 }
 
@@ -57,13 +54,14 @@ void FrontEnd::openEmptyWindow(){
 
 void FrontEnd::addDocumentView(QString title, QWidget *view)
 {
+    if(this->contentStack->count() == 1 &&
+            this->contentStack->widget(0) == this->welcome)
+    {
+        this->contentStack->removeTab(0);
+    }
+
     this->contentStack->addTab(view, title);
     this->contentStack->setCurrentWidget(view);
-
-    if(this->welcome != nullptr){
-        delete this->welcome;
-        this->welcome = nullptr;
-    }
 }
 
 void FrontEnd::setProjectTree(QStandardItemModel *model)
@@ -89,9 +87,9 @@ void FrontEnd::slot_receptCloseDocument(int index)
 {
     auto widget = dynamic_cast<QTextEdit*>(this->contentStack->widget(index));
     emit this->signal_closeTargetView(widget);
+
     if(this->contentStack->count() < 1){
         this->pjtStructure->clearSelection();
-        this->welcome = this->generateWelcomePanel();
         this->contentStack->addTab(this->welcome, "Welcome");
     }
 

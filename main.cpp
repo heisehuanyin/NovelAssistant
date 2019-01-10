@@ -8,6 +8,10 @@ int main(int argc, char *argv[])
     EdServer x("test");
     x.openGraphicsModel();
 
-    return a.exec();
+    auto val = a.exec();
+
+    //默认自动保存左右状态
+    x.slot_saveAll();
+    return val;
 
 }

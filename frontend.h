@@ -35,11 +35,10 @@ signals:
     void signal_moveNode(const QModelIndex &from, const QModelIndex &to);
 
 private:
-    QToolBar *const toolsbar;
     QSplitter *const baseFrame;
     QTreeView *const pjtStructure;
     QTabWidget *const contentStack;
-    QWidget * welcome;
+    QWidget *const welcome;
     QSplitter *const rightSplit;
 
     QWidget* generateWelcomePanel();

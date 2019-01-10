@@ -34,6 +34,10 @@ namespace __projectsymbo {
 class ProjectSymbo : public QObject, public __projectsymbo::DocManager
 {
     Q_OBJECT
+
+signals:
+    void signal_nodeModified(const QModelIndex &index);
+
 public:
     /**
      * @brief 构建一个空的项目
@@ -70,12 +74,14 @@ public:
      */
     QString projectPath();
 
+    void openDocument(const QModelIndex &index, QString &title, QTextEdit** view);
+
     /**
      * @brief 保存项目文件，filePath !=QString() 另存为且改变指向
      * @param filePath 路径
      * @return 0,成功；-1,失败
      */
-    int save(QString filePath=QString());
+    int saveProject(QString filePath=QString());
 
     /**
      * @brief 获取项目结构

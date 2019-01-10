@@ -138,7 +138,19 @@ QString ProjectSymbo::projectPath()
     return this->pjtPath;
 }
 
-int ProjectSymbo::save(QString filePath)
+void ProjectSymbo::openDocument(const QModelIndex &index, QString &title, QTextEdit **view)
+{
+    if(!index.isValid())
+        return;
+
+    auto item = this->structure->itemFromIndex(index);
+    auto xitem = dynamic_cast<__projectsymbo::FileSymbo*>(item);
+
+    title = xitem->text();
+    DocManager::openDocument(xitem->getRefPath(),view);
+}
+
+int ProjectSymbo::saveProject(QString filePath)
 {
     if(filePath == QString())
         filePath = this->pjtPath;

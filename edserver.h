@@ -16,6 +16,20 @@ namespace Support {
 class EdServer:public QObject
 {
     Q_OBJECT
+public:
+    explicit EdServer(QString title);
+    virtual ~EdServer();
+
+    void openGraphicsModel();
+
+public slots:
+    /**
+     * @brief 简单的全局保存操作，保存软件所有状态
+     */
+    void slot_saveAll();
+
+
+
 private:
     FrontEnd *const mainView;
     Support::ProjectSymbo* pjtSymbo;
@@ -27,19 +41,38 @@ private:
      */
     void openNovelDatabase(QString pjtPath);
 
+    /**
+     * @brief 刷新ui组件状态，主要用于更新菜单栏
+     */
     void refreshUIStatus();
 
 private slots:
+    /**
+     * @brief 创建新工程
+     */
     void slot_newProject();
+
+    /**
+     * @brief 打开已有工程
+     */
     void slot_openProject();
+
+    /**
+     * @brief 关闭当前工程
+     */
     void slot_closeProject();
-    void slot_saveAll();
+
 
     /**
      * @brief 打开项目树中的文件
      * @param index 树索引
      */
-    void slot_openWithinProject(const QModelIndex &index);
+    void slot_openItem(const QModelIndex &index);
+
+    /**
+     * @brief 关闭指定视图
+     * @param view
+     */
     void slot_closeTargetView(QTextEdit* view);
 
     /**
@@ -64,15 +97,16 @@ private slots:
      */
     void slot_NodeMove(const QModelIndex& from, const QModelIndex& to);
 
+    /**
+     * @brief 响应工具菜单
+     * @param item 条目
+     */
     void slot_ResponseToolsAct(QAction * item);
+
+    /**
+     * @brief 退出程序
+     */
     void exit();
-
-public:
-    explicit EdServer(QString title);
-    virtual ~EdServer();
-
-    void openGraphicsModel();
-
 };
 
 
