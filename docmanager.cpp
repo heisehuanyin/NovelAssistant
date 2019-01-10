@@ -4,7 +4,7 @@
 #include <QTextStream>
 #include <QDebug>
 
-using namespace Support;
+using namespace Support::__projectsymbo;
 
 DocManager::DocManager()
 {
@@ -67,7 +67,7 @@ int DocManager::saveDocument(QString filePath)
     return 0;
 }
 
-int DocManager::saveAll()
+int DocManager::saveAllActived()
 {
     auto keys = this->docCon.keys();
 
@@ -81,6 +81,11 @@ int DocManager::saveAll()
 QList<QString> DocManager::getActiveDocs()
 {
     return this->docCon.keys();
+}
+
+bool DocManager::isActived(QString filePath)
+{
+    return this->docCon.contains(filePath);
 }
 
 int DocManager::closeDocumentWithoutSave(QString filePath)

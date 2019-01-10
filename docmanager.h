@@ -5,6 +5,7 @@
 #include <QTextEdit>
 
 namespace Support {
+namespace __projectsymbo {
 /**
  * @brief 用于管理打开的文档，基于文件路径对视图实例进行管理。重复打开此路径，将返回打开的视图实例。
  */
@@ -30,23 +31,20 @@ public:
     int openDocument(QString filePath, QTextEdit **view);
 
     /**
-     * @brief 保存指定文档
+     * @brief 原地保存指定文档,不提供另存为功能
      * @param filePath 文件路径
      * @return 操作状态：0，成功；-1，此路径未打开；-2，保存失败，文档无法打开
      */
     int saveDocument(QString filePath);
 
-    /**
-     * @brief 保存全部打开文档
-     * @return 操作状态：0，成功；其他，失败；
-     */
-    int saveAll();
 
     /**
      * @brief 获取所有打开文档
      * @return 文档key集合
      */
     QList<QString> getActiveDocs();
+
+    bool isActived(QString filePath);
 
     /**
      * @brief 强制关闭指定文档，不保存
@@ -62,7 +60,15 @@ public:
      * @return 地址路径，如果返回“”，表示不存在该视图
      */
     QString returnDocpath(QTextEdit *view);
+
+protected:
+    /**
+     * @brief 保存全部打开文档
+     * @return 操作状态：0，成功；其他，失败；
+     */
+    int saveAllActived();
 };
+}
 
 }
 #endif // DOCMANAGER_H

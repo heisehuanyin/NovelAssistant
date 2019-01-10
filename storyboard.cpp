@@ -1,8 +1,8 @@
-#include "eventnodeedit.h"
+#include "eventnodes.h"
 #include "storyboard.h"
-#include "propedit.h"
-#include "skilledit.h"
-#include "charedit.h"
+#include "items.h"
+#include "ability.h"
+#include "character.h"
 
 #include <QGridLayout>
 #include <QGroupBox>
@@ -11,14 +11,16 @@
 #include <QtDebug>
 #include <QMessageBox>
 
-UIComp::StoryBoard::StoryBoard(qlonglong id, QWidget *parent):
+using namespace Editor;
+
+StoryBoard::StoryBoard(qlonglong id, QWidget *parent):
     QDialog (parent),
     characterID(id),
     focuseEvent(-1),
     charName(new QLabel),
     nodeName(new QLabel),
     apply(new QPushButton(tr("应用变更"))),
-    time_Story(new StoryDisplay(this)),
+    time_Story(new Component::StoryDisplay(this)),
     tabCon(new QTabWidget(this)),
     addENode(new QPushButton(tr("添加事件"))),
     removeEvent(new QPushButton(tr("移除事件"))),
@@ -51,9 +53,9 @@ UIComp::StoryBoard::StoryBoard(qlonglong id, QWidget *parent):
     baseLayout->addWidget(this->apply, 0, 7);
 
     baseLayout->addWidget(this->time_Story, 1, 0, 11, 3);
-    this->connect(this->time_Story, &UIComp::StoryDisplay::focuse,
+    this->connect(this->time_Story, &Component::StoryDisplay::focuse,
                   this,             &StoryBoard::slot_Response4Focuse);
-    this->connect(this->time_Story, &UIComp::StoryDisplay::deFocuse,
+    this->connect(this->time_Story, &Component::StoryDisplay::deFocuse,
                   this,             &StoryBoard::slot_Response4Defocuse);
 
     baseLayout->addWidget(this->tabCon, 1, 3, 11, 5);
@@ -124,7 +126,7 @@ UIComp::StoryBoard::StoryBoard(qlonglong id, QWidget *parent):
     this->displayCharacterLifetracker(id);
 }
 
-UIComp::StoryBoard::~StoryBoard()
+StoryBoard::~StoryBoard()
 {
     delete this->charName;
     delete this->nodeName;
@@ -133,7 +135,7 @@ UIComp::StoryBoard::~StoryBoard()
     delete this->tabCon;
 }
 
-void UIComp::StoryBoard::displayPropChange(qlonglong charid, qlonglong evnodeId)
+void StoryBoard::displayPropChange(qlonglong charid, qlonglong evnodeId)
 {
     qlonglong maxTime;
     {
@@ -194,7 +196,7 @@ void UIComp::StoryBoard::displayPropChange(qlonglong charid, qlonglong evnodeId)
     this->propModel->setHeaderData(2, Qt::Horizontal, "备注");
 }
 
-void UIComp::StoryBoard::displaySkillChange(qlonglong charid, qlonglong evnodeId)
+void StoryBoard::displaySkillChange(qlonglong charid, qlonglong evnodeId)
 {
 
     qlonglong maxTime;
@@ -248,7 +250,7 @@ void UIComp::StoryBoard::displaySkillChange(qlonglong charid, qlonglong evnodeId
     this->skillModel->setHeaderData(1, Qt::Horizontal, "备注");
 }
 
-void UIComp::StoryBoard::displayRelationChange(qlonglong charid, qlonglong evnodeId)
+void StoryBoard::displayRelationChange(qlonglong charid, qlonglong evnodeId)
 {
 
     qlonglong maxTime;
@@ -311,7 +313,7 @@ void UIComp::StoryBoard::displayRelationChange(qlonglong charid, qlonglong evnod
 
 }
 
-void UIComp::StoryBoard::displayCharacterLifetracker(qlonglong id)
+void StoryBoard::displayCharacterLifetracker(qlonglong id)
 {
     QSqlQuery q;
     q.prepare("select "
@@ -349,13 +351,12 @@ void UIComp::StoryBoard::displayCharacterLifetracker(qlonglong id)
         auto name = q.value(1).toString();
         name += ":" + q.value(2).toString();
 
-        auto node(new UIComp::EventSymbo(name, q.value(3).toLongLong(), q.value(4).toLongLong()));
-        this->time_Story->addEvent(q.value(0).toLongLong(), node);
+        this->time_Story->addEvent(q.value(0).toLongLong(), name, q.value(3).toLongLong(), q.value(4).toLongLong());
         this->eventNodeList.append(q.value(0).toLongLong());
     }
 }
 
-void UIComp::StoryBoard::displayEventDetial(qlonglong eventId)
+void StoryBoard::displayEventDetial(qlonglong eventId)
 {
     if(eventId == -1){
         this->nodeName->setText("");
@@ -429,19 +430,19 @@ void UIComp::StoryBoard::displayEventDetial(qlonglong eventId)
     this->displayRelationChange(this->characterID, this->focuseEvent);
 }
 
-void UIComp::StoryBoard::slot_Response4Focuse(qlonglong id)
+void StoryBoard::slot_Response4Focuse(qlonglong id)
 {
     this->focuseEvent = id;
     this->displayEventDetial(id);
 }
 
-void UIComp::StoryBoard::slot_Response4Defocuse()
+void StoryBoard::slot_Response4Defocuse()
 {
     this->focuseEvent = -1;
     this->displayEventDetial();
 }
 
-void UIComp::StoryBoard::slot_Response4AddEventNode()
+void StoryBoard::slot_Response4AddEventNode()
 {
     qlonglong unknownLocation;
     {
@@ -466,7 +467,7 @@ prepareStep:
         }
     }
 
-    auto list = UIComp::EventnodeEdit::getSelectedItems();
+    auto list = Editor::EventNodes::getSelectedItems();
     QVariantList charids, evnodes, locations;
 
     for(int i=0; i< list.size(); ++i){
@@ -490,7 +491,7 @@ prepareStep:
     this->displayEventDetial();
 }
 
-void UIComp::StoryBoard::slot_Response4RemoveEventNode()
+void StoryBoard::slot_Response4RemoveEventNode()
 {
     if(this->focuseEvent==-1)
         return;
@@ -531,9 +532,9 @@ void UIComp::StoryBoard::slot_Response4RemoveEventNode()
     this->displayEventDetial();
 }
 
-void UIComp::StoryBoard::slot_Response4AddPropType()
+void StoryBoard::slot_Response4AddPropType()
 {
-    auto list = PropEdit::getSelectedItems();
+    auto list = Editor::Items::getSelectedItems();
 
     QVariantList c_ids,ev_ids,id_props;
     for(int i=0; i<list.length(); ++i){
@@ -565,7 +566,7 @@ void UIComp::StoryBoard::slot_Response4AddPropType()
     this->displayPropChange(this->characterID, this->focuseEvent);
 }
 
-void UIComp::StoryBoard::slot_Response4RemovePropType()
+void StoryBoard::slot_Response4RemovePropType()
 {
     auto index = this->propTable->currentIndex();
     if(!index.isValid())
@@ -583,7 +584,7 @@ void UIComp::StoryBoard::slot_Response4RemovePropType()
     this->displayPropChange(this->characterID, this->focuseEvent);
 }
 
-void UIComp::StoryBoard::slot_Response4PropModify(QStandardItem *item)
+void StoryBoard::slot_Response4PropModify(QStandardItem *item)
 {
     auto index = item->index();
     if(!index.isValid())
@@ -668,14 +669,14 @@ void UIComp::StoryBoard::slot_Response4PropModify(QStandardItem *item)
 
 }
 
-void UIComp::StoryBoard::slot_Response4AddSkillType()
+void StoryBoard::slot_Response4AddSkillType()
 {
     if(this->focuseEvent == -1){
         QMessageBox::critical(nullptr, "OPERATE ERROR", "未选择事件");
         return;
     }
     QVariantList chars, evnodes, skills;
-    auto list = SkillEdit::getSelectedItems();
+    auto list = Editor::Ability::getSelectedItems();
     for(int i=0; i< list.size(); ++i){
         auto item = list.at(i);
         if(this->ids_skill.contains(item.toLongLong()))
@@ -703,7 +704,7 @@ void UIComp::StoryBoard::slot_Response4AddSkillType()
     this->displaySkillChange(this->characterID, this->focuseEvent);
 }
 
-void UIComp::StoryBoard::slot_Response4RemoveSkillType()
+void StoryBoard::slot_Response4RemoveSkillType()
 {
     auto index = this->skillTable->currentIndex();
     if(!index.isValid())
@@ -722,7 +723,7 @@ void UIComp::StoryBoard::slot_Response4RemoveSkillType()
     this->displaySkillChange(this->characterID, this->focuseEvent);
 }
 
-void UIComp::StoryBoard::slot_Response4SkillModify(QStandardItem *item)
+void StoryBoard::slot_Response4SkillModify(QStandardItem *item)
 {
     auto index = item->index();
     if(!index.isValid())
@@ -780,14 +781,14 @@ void UIComp::StoryBoard::slot_Response4SkillModify(QStandardItem *item)
     this->displaySkillChange(this->characterID, this->focuseEvent);
 }
 
-void UIComp::StoryBoard::slot_Response4AddRelation()
+void StoryBoard::slot_Response4AddRelation()
 {
     if(this->focuseEvent == -1){
         QMessageBox::critical(nullptr, "OPERATE ERROR", "未选择事件");
         return;
     }
     QVariantList target, evnodes, host;
-    auto list = CharEdit::getSelectedItems();
+    auto list = Editor::Character::getSelectedItems();
     for(int i=0; i<list.size(); ++i){
         auto item = list.at(i);
         if(this->ids_relate.contains(item.toLongLong()))
@@ -813,7 +814,7 @@ void UIComp::StoryBoard::slot_Response4AddRelation()
     this->displayRelationChange(this->characterID, this->focuseEvent);
 }
 
-void UIComp::StoryBoard::slot_Response4RemoveRelation()
+void StoryBoard::slot_Response4RemoveRelation()
 {
     auto index = this->relationTable->currentIndex();
     if(!index.isValid())
@@ -831,7 +832,7 @@ void UIComp::StoryBoard::slot_Response4RemoveRelation()
     this->displayRelationChange(this->characterID, this->focuseEvent);
 }
 
-void UIComp::StoryBoard::slot_Response4RelationChange(QStandardItem *item)
+void StoryBoard::slot_Response4RelationChange(QStandardItem *item)
 {
     auto index = item->index();
     if(!index.isValid())

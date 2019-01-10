@@ -6,22 +6,18 @@
 #include <QAction>
 #include <QStandardItemModel>
 #include <QTextEdit>
+#include "frontend.h"
 
 namespace Support {
-    class DocManager;
     class ProjectSymbo;
     class DBInitTool;
-}
-namespace UIComp {
-    class MainWindow;
 }
 
 class EdServer:public QObject
 {
     Q_OBJECT
 private:
-    UIComp::MainWindow *const mainView;
-    Support::DocManager*const manager;
+    FrontEnd *const mainView;
     Support::ProjectSymbo* pjtSymbo;
     Support::DBInitTool *dbTool;
 

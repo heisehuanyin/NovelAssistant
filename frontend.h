@@ -11,15 +11,14 @@
 #include <QToolBar>
 #include <QToolBox>
 #include <QTreeView>
-namespace UIComp {
 
-class MainWindow : public QMainWindow
+class FrontEnd : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = nullptr);
-    ~MainWindow();
+    FrontEnd(QWidget *parent = nullptr);
+    ~FrontEnd();
 
     void openEmptyWindow();
     void addDocumentView(QString title, QWidget *view);
@@ -52,6 +51,6 @@ private slots:
     void slot_displayPopupMenu(const QPoint &point);
     void slot_ProjectManage(QAction* act);
 };
-}
+
 
 #endif // MAINWINDOW_H

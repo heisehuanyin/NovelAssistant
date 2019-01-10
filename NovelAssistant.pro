@@ -27,39 +27,39 @@ DEFINES += QT_DEPRECATED_WARNINGS
 CONFIG += c++11
 
 SOURCES += \
-    components.cpp \
-    eventnodeedit.cpp \
-    hiddenidmodel.cpp \
-    locationedit.cpp \
     main.cpp \
-    mainwindow.cpp \
-    propedit.cpp \
-    skilledit.cpp \
-    sqlport.cpp \
     storyboard.cpp \
     storydisplay.cpp \
     superdatetool.cpp \
     docmanager.cpp \
     edserver.cpp \
     projectsymbo.cpp \
-    charedit.cpp
+    hideidmodel.cpp \
+    frontend.cpp \
+    character.cpp \
+    eventnodes.cpp \
+    location.cpp \
+    items.cpp \
+    ability.cpp \
+    typekindgrade.cpp \
+    dbinittool.cpp
 
 HEADERS += \
-    components.h \
-    eventnodeedit.h \
-    hiddedidmodel.h \
-    locationedit.h \
-    mainwindow.h \
-    propedit.h \
-    skilledit.h \
-    sqlport.h \
     storyboard.h \
     storydisplay.h \
     superdatetool.h \
     docmanager.h \
     edserver.h \
     projectsymbo.h \
-    charedit.h
+    frontend.h \
+    character.h \
+    eventnodes.h \
+    location.h \
+    items.h \
+    ability.h \
+    typekindgrade.h \
+    dbinittool.h \
+    hideidmodel.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

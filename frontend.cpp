@@ -1,18 +1,18 @@
-#include "mainwindow.h"
+#include "frontend.h"
 
 #include <QApplication>
 #include <QStyle>
 #include <QTextEdit>
-#include "charedit.h"
-#include "components.h"
-#include "locationedit.h"
-#include "propedit.h"
-#include "skilledit.h"
-#include "eventnodeedit.h"
+#include "character.h"
+#include "typekindgrade.h"
+#include "location.h"
+#include "items.h"
+#include "ability.h"
+#include "eventnodes.h"
 
-using namespace UIComp;
+using namespace Component;
 
-MainWindow::MainWindow(QWidget *parent)
+FrontEnd::FrontEnd(QWidget *parent)
     : QMainWindow(parent),
       toolsbar(new QToolBar(this)),
       baseFrame(new QSplitter(Qt::Horizontal, this)),
@@ -32,11 +32,11 @@ MainWindow::MainWindow(QWidget *parent)
     this->baseFrame->addWidget(rightSplit);
 
     this->connect(this->contentStack,   &QTabWidget::tabCloseRequested,
-                  this,                 &MainWindow::slot_receptCloseDocument);
+                  this,                 &FrontEnd::slot_receptCloseDocument);
 
     this->pjtStructure->setContextMenuPolicy(Qt::CustomContextMenu);
     this->connect(this->pjtStructure,   &QTreeView::customContextMenuRequested,
-                  this,                 &MainWindow::slot_displayPopupMenu);
+                  this,                 &FrontEnd::slot_displayPopupMenu);
 
     this->baseFrame->setStretchFactor(0,0);
     this->baseFrame->setStretchFactor(1,1);
@@ -46,16 +46,16 @@ MainWindow::MainWindow(QWidget *parent)
     this->contentStack->addTab(this->welcome, "Welcome");
 }
 
-MainWindow::~MainWindow()
+FrontEnd::~FrontEnd()
 {
 
 }
 
-void MainWindow::openEmptyWindow(){
+void FrontEnd::openEmptyWindow(){
     this->show();
 }
 
-void MainWindow::addDocumentView(QString title, QWidget *view)
+void FrontEnd::addDocumentView(QString title, QWidget *view)
 {
     this->contentStack->addTab(view, title);
     this->contentStack->setCurrentWidget(view);
@@ -66,26 +66,26 @@ void MainWindow::addDocumentView(QString title, QWidget *view)
     }
 }
 
-void MainWindow::setProjectTree(QStandardItemModel *model)
+void FrontEnd::setProjectTree(QStandardItemModel *model)
 {
     auto xtemp = this->pjtStructure->selectionModel();
     this->pjtStructure->setModel(model);
     delete xtemp;
     this->connect(this->pjtStructure,    &QTreeView::clicked,
-                  this,     &MainWindow::slot_receptOpenDocument);
+                  this,     &FrontEnd::slot_receptOpenDocument);
 }
 
-QWidget *MainWindow::generateWelcomePanel()
+QWidget *FrontEnd::generateWelcomePanel()
 {
     return new QWidget;
 }
 
-void MainWindow::slot_receptOpenDocument(const QModelIndex &index)
+void FrontEnd::slot_receptOpenDocument(const QModelIndex &index)
 {
     emit this->signal_openWithinProject(index);
 }
 
-void MainWindow::slot_receptCloseDocument(int index)
+void FrontEnd::slot_receptCloseDocument(int index)
 {
     auto widget = dynamic_cast<QTextEdit*>(this->contentStack->widget(index));
     emit this->signal_closeTargetView(widget);
@@ -97,7 +97,7 @@ void MainWindow::slot_receptCloseDocument(int index)
 
 }
 
-void MainWindow::slot_displayPopupMenu(const QPoint &point)
+void FrontEnd::slot_displayPopupMenu(const QPoint &point)
 {
     auto index = this->pjtStructure->indexAt(point);
     if(!index.isValid())
@@ -140,12 +140,12 @@ void MainWindow::slot_displayPopupMenu(const QPoint &point)
     if(!p.isValid())
         item->setEnabled(false);
     this->connect(&m,   &QMenu::triggered,
-                  this, &MainWindow::slot_ProjectManage);
+                  this, &FrontEnd::slot_ProjectManage);
 
     m.exec(this->mapToGlobal(point));
 }
 
-void MainWindow::slot_ProjectManage(QAction *act)
+void FrontEnd::slot_ProjectManage(QAction *act)
 {
     auto index = this->pjtStructure->currentIndex();
     if(!index.isValid())

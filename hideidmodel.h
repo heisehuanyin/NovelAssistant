@@ -18,7 +18,7 @@ namespace Support {
      * 7.【可选】使用oppositeID方法，能够获取视图中指定结果条目的id；
      * 8.【可选】使用clear方法，清空结果集合，仅清空结果集合；
      */
-    class HiddenIdModel:public QAbstractTableModel
+    class HideIdModel:public QAbstractTableModel
     {
         Q_OBJECT
     public:
@@ -27,8 +27,8 @@ namespace Support {
          * @param parent 父对象
          * @param checkable 决定是否允许显示checkable特性
          */
-        explicit HiddenIdModel(QObject*parent=nullptr);
-        virtual ~HiddenIdModel() override;
+        explicit HideIdModel(QObject*parent=nullptr);
+        virtual ~HideIdModel() override;
 
         /**
          * @brief 修改模型条目是否允许勾选

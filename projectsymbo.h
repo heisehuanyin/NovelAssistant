@@ -4,10 +4,11 @@
 #include <QObject>
 #include <QStandardItemModel>
 #include <QDomDocument>
+#include "docmanager.h"
 
 namespace Support {
 
-namespace __project {
+namespace __projectsymbo {
     class FileSymbo : public QStandardItem{
     public:
         explicit FileSymbo(QDomElement dom);
@@ -30,7 +31,7 @@ namespace __project {
 /**
  * @brief 本类型用于代表项目本身，针对项目进行的操作都转化为对本类型示例的操作
  */
-class ProjectSymbo : public QObject
+class ProjectSymbo : public QObject, public __projectsymbo::DocManager
 {
     Q_OBJECT
 public:
@@ -168,6 +169,7 @@ private:
 
 private slots:
     void slot_nodeModify(QStandardItem* item);
+
 };
 
 }

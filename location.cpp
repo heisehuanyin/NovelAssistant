@@ -1,4 +1,4 @@
-#include "locationedit.h"
+#include "location.h"
 
 #include <QGridLayout>
 #include <QLabel>
@@ -6,15 +6,15 @@
 #include <QtDebug>
 #include <QSqlError>
 
-using namespace UIComp;
+using namespace Editor;
 
-LocationEdit::LocationEdit(QWidget *parent):
+Location::Location(QWidget *parent):
     QDialog (parent),
     locName(new QLineEdit),
     locAdd(new QPushButton(tr("添加地点"))),
     locRemove(new QPushButton(tr("移除地点"))),
     locTable(new QTableView),
-    locQueryModel(new Support::HiddenIdModel(this)),
+    locQueryModel(new Support::HideIdModel(this)),
     suffixInput(new QLineEdit),
     xposInput(new QSpinBox),
     yposInput(new QSpinBox),
@@ -31,23 +31,23 @@ LocationEdit::LocationEdit(QWidget *parent):
 
     baseL->addWidget(this->locName, 0, 0, 1, 3);
     this->connect(this->locName, &QLineEdit::textChanged,
-                  this,          &LocationEdit::slot_queryLocation);
+                  this,          &Location::slot_queryLocation);
     baseL->addWidget(this->locAdd, 0, 3);
     this->connect(this->locAdd, &QPushButton::clicked,
-                  this,         &LocationEdit::slot_addLocation);
+                  this,         &Location::slot_addLocation);
     baseL->addWidget(this->locRemove,0, 4);
     this->connect(this->locRemove, &QPushButton::clicked,
-                  this,            &LocationEdit::slot_removeLocation);
+                  this,            &Location::slot_removeLocation);
     baseL->addWidget(this->apply,0, 5);
     this->connect(this->apply, &QPushButton::clicked,
-                  this,            &LocationEdit::slot_changeApply);
+                  this,            &Location::slot_changeApply);
     baseL->addWidget(this->locTable, 1, 0, 16, 3);
     this->locTable->setModel(this->locQueryModel);
     this->locTable->setSelectionMode(QAbstractItemView::SingleSelection);
     this->locTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     auto smodel = this->locTable->selectionModel();
     this->connect(smodel, &QItemSelectionModel::selectionChanged,
-                  this,   &LocationEdit::slot_responseItemSelection);
+                  this,   &Location::slot_responseItemSelection);
 
     this->locAdd->setEnabled(false);
     this->locRemove->setEnabled(false);
@@ -72,13 +72,13 @@ LocationEdit::LocationEdit(QWidget *parent):
     this->zposInput->setMaximum(2100000000);
     this->zposInput->setMinimum(-2100000000);
     this->connect(this->suffixInput, &QLineEdit::textEdited,
-                  this,              &LocationEdit::slot_statusChanged);
+                  this,              &Location::slot_statusChanged);
     this->connect(this->xposInput, static_cast<void(QSpinBox::*)(const QString &)>(&QSpinBox::valueChanged),
-                  this,            &LocationEdit::slot_statusChanged);
+                  this,            &Location::slot_statusChanged);
     this->connect(this->yposInput, static_cast<void(QSpinBox::*)(const QString &)>(&QSpinBox::valueChanged),
-                  this,            &LocationEdit::slot_statusChanged);
+                  this,            &Location::slot_statusChanged);
     this->connect(this->zposInput, static_cast<void(QSpinBox::*)(const QString &)>(&QSpinBox::valueChanged),
-                  this,            &LocationEdit::slot_statusChanged);
+                  this,            &Location::slot_statusChanged);
 
     auto storyGroup(new QGroupBox("历史渊源："));
     baseL->addWidget(storyGroup, 6, 3, 5, 3);
@@ -86,7 +86,7 @@ LocationEdit::LocationEdit(QWidget *parent):
     storyGroup->setLayout(grid3);
     grid3->addWidget(this->storyInput);
     this->connect(this->storyInput, &QTextEdit::textChanged,
-                  this,             &LocationEdit::slot_statusChanged);
+                  this,             &Location::slot_statusChanged);
 
     auto nickName(new QGroupBox("别名："));
     baseL->addWidget(nickName, 11, 3, 6, 3);
@@ -97,12 +97,12 @@ LocationEdit::LocationEdit(QWidget *parent):
     nickPlace->addWidget(this->nickAdd, 0, 2);
     nickPlace->addWidget(this->nickRemove, 1, 2);
     this->connect(this->nickAdd, &QPushButton::clicked,
-                  this,          &LocationEdit::slot_addNick);
+                  this,          &Location::slot_addNick);
     this->connect(this->nickRemove, &QPushButton::clicked,
-                  this,             &LocationEdit::slot_removeNick);
+                  this,             &Location::slot_removeNick);
 }
 
-LocationEdit::~LocationEdit()
+Location::~Location()
 {
 
     delete locName;
@@ -121,7 +121,7 @@ LocationEdit::~LocationEdit()
     delete apply;
 }
 
-void LocationEdit::slot_queryLocation(const QString &text)
+void Location::slot_queryLocation(const QString &text)
 {
 
     this->locAdd->setEnabled(false);
@@ -153,7 +153,7 @@ void LocationEdit::slot_queryLocation(const QString &text)
     }
 }
 
-void LocationEdit::slot_addLocation()
+void Location::slot_addLocation()
 {
     auto loc_name = this->locName->text();
     QString execStr = "insert into table_locationlist "
@@ -166,7 +166,7 @@ void LocationEdit::slot_addLocation()
     this->slot_queryLocation(loc_name);
 }
 
-void LocationEdit::slot_removeLocation()
+void Location::slot_removeLocation()
 {
     auto index = this->locTable->currentIndex();
     auto id = this->locQueryModel->oppositeID(index);
@@ -182,12 +182,12 @@ void LocationEdit::slot_removeLocation()
     this->locName->setText(name);
 }
 
-void LocationEdit::slot_statusChanged()
+void Location::slot_statusChanged()
 {
     this->apply->setEnabled(true);
 }
 
-void LocationEdit::slot_changeApply()
+void Location::slot_changeApply()
 {
     auto index = this->locTable->currentIndex();
     auto id = this->locQueryModel->oppositeID(index);
@@ -224,7 +224,7 @@ void LocationEdit::slot_changeApply()
     this->locName->setText(name);
 }
 
-void LocationEdit::slot_responseItemSelection(const QItemSelection &selected, const QItemSelection &)
+void Location::slot_responseItemSelection(const QItemSelection &selected, const QItemSelection &)
 {
     this->locRemove->setEnabled(true);
     auto index = selected.indexes().at(0);
@@ -262,14 +262,14 @@ void LocationEdit::slot_responseItemSelection(const QItemSelection &selected, co
     this->apply->setEnabled(false);
 }
 
-void LocationEdit::slot_addNick()
+void Location::slot_addNick()
 {
     this->nickNames->addItem("双击修改");
     auto item = this->nickNames->item(nickNames->count()-1);
     item->setFlags(item->flags()|Qt::ItemIsEditable);
 }
 
-void LocationEdit::slot_removeNick()
+void Location::slot_removeNick()
 {
     auto row = this->nickNames->currentRow();
 

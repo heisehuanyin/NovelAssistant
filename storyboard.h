@@ -12,8 +12,7 @@
 #include <QTableView>
 #include <QTextEdit>
 
-
-namespace UIComp {
+namespace Editor {
 
 /**
  * @brief 编辑角色的故事线的主要面板
@@ -36,16 +35,16 @@ private:
     QLabel *const charName;
     QLabel *const nodeName;
     QPushButton *const apply;
-    UIComp::StoryDisplay *const time_Story;
+    Component::StoryDisplay *const time_Story;
     QTabWidget *const tabCon;
 
     QPushButton *const addENode,
-                *const removeEvent;
+    *const removeEvent;
     QComboBox *const locationSelect;
     QTextEdit *const evNode2Char_Desc;
 
     QPushButton *const addProp,
-                *const removeProp;
+    *const removeProp;
     QWidget *const edit4Prop;
     QTableView  *const propTable;
     QStandardItemModel *const propModel;
@@ -60,7 +59,7 @@ private:
 
 
     QPushButton *const addSkill,
-                *const removeSkill;
+    *const removeSkill;
     QTableView  *const skillTable;
     QStandardItemModel *const skillModel;
     QList<qlonglong> ids_skill;
@@ -74,7 +73,7 @@ private:
 
 
     QPushButton *const addRelation,
-                *const removeRelation;
+    *const removeRelation;
     QTableView  *const relationTable;
     QStandardItemModel *const relationModel;
     QList<qlonglong> ids_relate;
@@ -137,6 +136,7 @@ private slots:
     void slot_Response4RemoveRelation();
     void slot_Response4RelationChange(QStandardItem* item);
 };
-
 }
+
+
 #endif // STORYBOARD_H

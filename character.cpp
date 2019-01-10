@@ -1,4 +1,4 @@
-#include "charedit.h"
+#include "character.h"
 #include "storyboard.h"
 
 #include <QGridLayout>
@@ -8,13 +8,14 @@
 #include <QSqlQuery>
 #include <QMessageBox>
 
-using namespace UIComp;
+using namespace Component;
+using namespace Editor;
 
-CharEdit::CharEdit(QWidget *const parent):
+Character::Character(QWidget *const parent):
     QDialog (parent),
     input(new QLineEdit),
     table(new QTableView),
-    tableModel(new Support::HiddenIdModel(this)),
+    tableModel(new Support::HideIdModel(this)),
     addItem(new QPushButton(tr("增加条目"))),
     removeItem(new QPushButton(tr("删除条目"))),
     apply(new QPushButton(tr("保存修改"))),
@@ -35,26 +36,26 @@ CharEdit::CharEdit(QWidget *const parent):
 
     grid->addWidget(this->input, 0, 0, 1, 3);
     this->connect(input, &QLineEdit::textChanged,
-                  this,  &CharEdit::slot_queryCharacter);
+                  this,  &Character::slot_queryCharacter);
     grid->addWidget(this->table, 1, 0, 13, 3);
     this->table->setModel(this->tableModel);
     auto smodel = this->table->selectionModel();
     this->connect(smodel, &QItemSelectionModel::selectionChanged,
-                  this,   &CharEdit::slot_responseItemSelection);
+                  this,   &Character::slot_responseItemSelection);
     this->table->setSelectionMode(QAbstractItemView::SingleSelection);
     this->table->setSelectionBehavior(QAbstractItemView::SelectRows);
     grid->addWidget(this->addItem, 0, 3, 1, 2);
     this->connect(this->addItem, &QPushButton::clicked,
-                  this,          &CharEdit::slot_addItem);
+                  this,          &Character::slot_addItem);
     grid->addWidget(this->removeItem, 0, 5, 1, 2);
     this->connect(this->removeItem, &QPushButton::clicked,
-                  this,             &CharEdit::slot_removeItem);
+                  this,             &Character::slot_removeItem);
     grid->addWidget(this->editStory, 0, 7, 1, 2);
     this->connect(this->editStory,  &QPushButton::clicked,
-                  this,             &CharEdit::slot_editCharcterStory);
+                  this,             &Character::slot_editCharcterStory);
     grid->addWidget(this->apply, 0, 9, 1, 2);
     this->connect(this->apply,  &QPushButton::clicked,
-                  this,         &CharEdit::slot_4apply);
+                  this,         &Character::slot_4apply);
 
     auto group1(new QGroupBox(tr("昵称管理")));
     grid->addWidget(group1, 8, 3, 6, 4);
@@ -64,10 +65,10 @@ CharEdit::CharEdit(QWidget *const parent):
     this->nicknames->setSelectionMode(QAbstractItemView::SingleSelection);
     grid1->addWidget(this->addNick, 1, 0);
     this->connect(this->addNick, &QPushButton::clicked,
-                  this,          &CharEdit::slot_addNickName);
+                  this,          &Character::slot_addNickName);
     grid1->addWidget(this->removeNick, 1, 1);
     this->connect(this->removeNick, &QPushButton::clicked,
-                  this,             &CharEdit::slot_removeNickName);
+                  this,             &Character::slot_removeNickName);
 
     auto group2(new QGroupBox(tr("生卒时间")));
     grid->addWidget(group2, 5, 3, 3, 4);
@@ -76,11 +77,11 @@ CharEdit::CharEdit(QWidget *const parent):
     grid2->addWidget(new QLabel(tr("生于：")));
     grid2->addWidget(this->birthDay, 0, 1, 1, 3);
     this->connect(this->birthDay,   &QPushButton::clicked,
-                  this,             &CharEdit::slot_birthEdit);
+                  this,             &Character::slot_birthEdit);
     grid2->addWidget(new QLabel(tr("卒于：")), 1, 0);
     grid2->addWidget(this->deathDay, 1, 1, 1, 3);
     this->connect(this->deathDay,   &QPushButton::clicked,
-                  this,             &CharEdit::slot_deathEdit);
+                  this,             &Character::slot_deathEdit);
 
     auto group3(new QGroupBox(tr("阅历表")));
     grid->addWidget(group3, 5, 7, 9, 4);
@@ -94,11 +95,11 @@ CharEdit::CharEdit(QWidget *const parent):
     group4->setLayout(grid4);
     grid4->addWidget(this->comment);
     this->connect(this->comment,    &QTextEdit::textChanged,
-                  this,             &CharEdit::slot_statusChanged);
+                  this,             &Character::slot_statusChanged);
 
 }
 
-CharEdit::~CharEdit()
+Character::~Character()
 {
     delete input;
     delete table;
@@ -118,15 +119,15 @@ CharEdit::~CharEdit()
     delete comment;
 }
 
-QList<QVariant> CharEdit::getSelectedItems()
+QList<QVariant> Character::getSelectedItems()
 {
-    auto instance(new CharEdit);
+    auto instance(new Character);
     instance->tableModel->changeCheckable(true);
     instance->exec();
     return instance->tableModel->selectedRecordIDs();
 }
 
-void CharEdit::slot_queryCharacter(const QString &text)
+void Character::slot_queryCharacter(const QString &text)
 {
     this->tableModel->clear();
     this->addItem->setEnabled(false);
@@ -156,7 +157,7 @@ void CharEdit::slot_queryCharacter(const QString &text)
     }
 }
 
-void CharEdit::slot_addItem()
+void Character::slot_addItem()
 {
     QSqlQuery q;
     q.prepare( "insert into table_characterbasic "
@@ -169,7 +170,7 @@ void CharEdit::slot_addItem()
     this->input->setText(xname);
 }
 
-void CharEdit::slot_removeItem()
+void Character::slot_removeItem()
 {
     auto index = this->table->currentIndex();
     if(!index.isValid())
@@ -187,7 +188,7 @@ void CharEdit::slot_removeItem()
     this->removeItem->setEnabled(false);
 }
 
-void CharEdit::slot_4apply()
+void Character::slot_4apply()
 {
     auto index = this->table->currentIndex();
     if(!index.isValid())
@@ -223,7 +224,7 @@ void CharEdit::slot_4apply()
     this->input->setText(name.toString());
 }
 
-void CharEdit::slot_birthEdit()
+void Character::slot_birthEdit()
 {
     auto time_temp = this->birthEdit->dateEdit();
     if(time_temp > this->deathEdit->toLongLong()){
@@ -237,7 +238,7 @@ void CharEdit::slot_birthEdit()
     this->slot_statusChanged();
 }
 
-void CharEdit::slot_deathEdit()
+void Character::slot_deathEdit()
 {
     auto time_temp = this->deathEdit->dateEdit();
     if(this->birthEdit->toLongLong() > time_temp){
@@ -251,7 +252,7 @@ void CharEdit::slot_deathEdit()
     this->slot_statusChanged();
 }
 
-void CharEdit::slot_addNickName()
+void Character::slot_addNickName()
 {
     this->nicknames->addItem("双击修改");
     auto item = this->nicknames->item(nicknames->count()-1);
@@ -259,7 +260,7 @@ void CharEdit::slot_addNickName()
     this->slot_statusChanged();
 }
 
-void CharEdit::slot_removeNickName()
+void Character::slot_removeNickName()
 {
     auto row = this->nicknames->currentRow();
 
@@ -270,7 +271,7 @@ void CharEdit::slot_removeNickName()
     this->slot_statusChanged();
 }
 
-void CharEdit::slot_responseItemSelection(const QItemSelection &, const QItemSelection &)
+void Character::slot_responseItemSelection(const QItemSelection &, const QItemSelection &)
 {
     auto index = this->table->currentIndex();
     if(!index.isValid())
@@ -327,15 +328,14 @@ void CharEdit::slot_responseItemSelection(const QItemSelection &, const QItemSel
         auto name = q.value(1).toString();
         name += ":" + q.value(2).toString();
 
-        auto node(new UIComp::EventSymbo(name, q.value(3).toLongLong(), q.value(4).toLongLong()));
-        this->storyDisplay->addEvent(q.value(0).toLongLong(), node);
+        this->storyDisplay->addEvent(q.value(0).toLongLong(), name, q.value(3).toLongLong(), q.value(4).toLongLong());
     }
 
     this->removeItem->setEnabled(true);
     this->apply->setEnabled(false);
 }
 
-void CharEdit::slot_editCharcterStory()
+void Character::slot_editCharcterStory()
 {
     auto index = this->table->currentIndex();
     if(!index.isValid())
@@ -347,7 +347,7 @@ void CharEdit::slot_editCharcterStory()
     this->apply->setEnabled(true);
 }
 
-void CharEdit::slot_statusChanged()
+void Character::slot_statusChanged()
 {
     this->apply->setEnabled(true);
 }

@@ -1,4 +1,4 @@
-#include "eventnodeedit.h"
+#include "eventnodes.h"
 
 #include <QGridLayout>
 #include <QGroupBox>
@@ -7,16 +7,16 @@
 #include <QSqlError>
 #include <QMessageBox>
 
-using namespace UIComp;
+using namespace Editor;
 
-EventnodeEdit::EventnodeEdit(QWidget *parent):
+EventNodes::EventNodes(QWidget *parent):
     QDialog(parent),
     input(new QLineEdit),
     addItem(new QPushButton(tr("添加阶段"))),
     removeItem(new QPushButton(tr("删除阶段"))),
     apply(new QPushButton(tr("应用变更"))),
     eventTable(new QTableView),
-    eventModel(new Support::HiddenIdModel(this)),
+    eventModel(new Support::HideIdModel(this)),
     tabCon(new QTabWidget),
     evNameInput(new QLineEdit),
     birthDay(new QPushButton(tr("xxxxx年xx月xx日"))),
@@ -39,16 +39,16 @@ EventnodeEdit::EventnodeEdit(QWidget *parent):
 
     bLayout->addWidget(this->input, 0, 0, 1, 4);
     this->connect(this->input, &QLineEdit::textChanged,
-                  this,        &EventnodeEdit::slot_queryEventNode);
+                  this,        &EventNodes::slot_queryEventNode);
     bLayout->addWidget(this->addItem, 0, 4);
     this->connect(this->addItem, &QPushButton::clicked,
-                  this,          &EventnodeEdit::slot_respond2Additem);
+                  this,          &EventNodes::slot_respond2Additem);
     bLayout->addWidget(this->removeItem, 0, 5);
     this->connect(this->removeItem, &QPushButton::clicked,
-                  this,             &EventnodeEdit::slot_respond2Removeitem);
+                  this,             &EventNodes::slot_respond2Removeitem);
     bLayout->addWidget(this->apply, 0, 8);
     this->connect(this->apply,  &QPushButton::clicked,
-                  this,         &EventnodeEdit::slot_4Apply);
+                  this,         &EventNodes::slot_4Apply);
 
     bLayout->addWidget(eventTable, 1, 0, 10, 4);
     this->eventTable->setModel(this->eventModel);
@@ -56,7 +56,7 @@ EventnodeEdit::EventnodeEdit(QWidget *parent):
     this->eventTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     auto model = this->eventTable->selectionModel();
     this->connect(model,&QItemSelectionModel::selectionChanged,
-                  this, &EventnodeEdit::slot_targetItemChanged);
+                  this, &EventNodes::slot_targetItemChanged);
 
 
 
@@ -79,7 +79,7 @@ EventnodeEdit::EventnodeEdit(QWidget *parent):
     panel_1_layout->addWidget(new QLabel(tr("名称：")));
     panel_1_layout->addWidget(this->evNameInput, 0, 1, 1, 2);
     this->connect(this->evNameInput,    &QLineEdit::textChanged,
-                  this,                 &EventnodeEdit::slot_stateChanged);
+                  this,                 &EventNodes::slot_stateChanged);
 
     auto time(new QGroupBox(tr("始末时间")));
     auto inb(new QGridLayout);
@@ -87,10 +87,10 @@ EventnodeEdit::EventnodeEdit(QWidget *parent):
     inb->addWidget(new QLabel(tr("始于：")));
     inb->addWidget(this->birthDay, 0, 1, 1, 3);
     this->connect(this->birthDay, &QPushButton::clicked,
-                  this,           &EventnodeEdit::slot_editBeginTime);
+                  this,           &EventNodes::slot_editBeginTime);
     inb->addWidget(this->deathDay, 1, 1, 1, 3);
     this->connect(this->deathDay, &QPushButton::clicked,
-                  this,           &EventnodeEdit::slot_editEndTime);
+                  this,           &EventNodes::slot_editEndTime);
     inb->addWidget(new QLabel(tr("末于：")), 1, 0);
     panel_1_layout->addWidget(time, 1, 0, 3, 3);
 
@@ -100,7 +100,7 @@ EventnodeEdit::EventnodeEdit(QWidget *parent):
     __layout->addWidget(this->evNodeComment);
     panel_1_layout->addWidget(comments, 0, 3, 4, 2);
     this->connect(this->evNodeComment,  &QTextEdit::textChanged,
-                  this,                 &EventnodeEdit::slot_stateChanged);
+                  this,                 &EventNodes::slot_stateChanged);
 
     auto evndesc(new QGroupBox(tr("事件阶段描述")));
     auto _layout(new QGridLayout);
@@ -108,7 +108,7 @@ EventnodeEdit::EventnodeEdit(QWidget *parent):
     _layout->addWidget(this->evNodeDesc);
     panel_1_layout->addWidget(evndesc, 4, 0, 4, 5);
     this->connect(this->evNodeDesc, &QTextEdit::textChanged,
-                  this,             &EventnodeEdit::slot_stateChanged);
+                  this,             &EventNodes::slot_stateChanged);
 
 
     auto panel_2 = new QWidget(this);
@@ -132,17 +132,17 @@ EventnodeEdit::EventnodeEdit(QWidget *parent):
     this->apply->setEnabled(false);
 }
 
-EventnodeEdit::~EventnodeEdit(){}
+EventNodes::~EventNodes(){}
 
-QList<QVariant> EventnodeEdit::getSelectedItems()
+QList<QVariant> EventNodes::getSelectedItems()
 {
-    auto instance(new EventnodeEdit);
+    auto instance(new EventNodes);
     instance->eventModel->changeCheckable(true);
     instance->exec();
     return instance->eventModel->selectedRecordIDs();
 }
 
-void EventnodeEdit::slot_queryEventNode(const QString &text)
+void EventNodes::slot_queryEventNode(const QString &text)
 {
     this->addItem->setEnabled(false);
     this->removeItem->setEnabled(false);
@@ -176,7 +176,7 @@ void EventnodeEdit::slot_queryEventNode(const QString &text)
     this->eventTable->resizeColumnsToContents();
 }
 
-void EventnodeEdit::slot_respond2Additem()
+void EventNodes::slot_respond2Additem()
 {
     QString eName;
     if(this->eventModel->rowCount(QModelIndex()) == 0){
@@ -207,7 +207,7 @@ void EventnodeEdit::slot_respond2Additem()
     this->input->setText(eName);
 }
 
-void EventnodeEdit::slot_respond2Removeitem()
+void EventNodes::slot_respond2Removeitem()
 {
     auto index = this->eventTable->currentIndex();
     if(!index.isValid()){
@@ -228,7 +228,7 @@ void EventnodeEdit::slot_respond2Removeitem()
     this->removeItem->setEnabled(false);
 }
 
-void EventnodeEdit::slot_targetItemChanged(const QItemSelection &, const QItemSelection &)
+void EventNodes::slot_targetItemChanged(const QItemSelection &, const QItemSelection &)
 {
     auto index = this->eventTable->currentIndex();
     if(!index.isValid())
@@ -272,7 +272,7 @@ void EventnodeEdit::slot_targetItemChanged(const QItemSelection &, const QItemSe
     this->apply->setEnabled(false);
 }
 
-void EventnodeEdit::slot_editBeginTime()
+void EventNodes::slot_editBeginTime()
 {
     auto time_value = this->beginStatus->dateEdit();
     if(time_value > this->endStatus->toLongLong()){
@@ -284,7 +284,7 @@ void EventnodeEdit::slot_editBeginTime()
     this->slot_stateChanged();
 }
 
-void EventnodeEdit::slot_editEndTime()
+void EventNodes::slot_editEndTime()
 {
     auto time_value = this->endStatus->dateEdit();
     if(this->beginStatus->toLongLong() > time_value){
@@ -296,12 +296,12 @@ void EventnodeEdit::slot_editEndTime()
     this->slot_stateChanged();
 }
 
-void EventnodeEdit::slot_stateChanged()
+void EventNodes::slot_stateChanged()
 {
     this->apply->setEnabled(true);
 }
 
-void EventnodeEdit::slot_4Apply()
+void EventNodes::slot_4Apply()
 {
     auto index = this->eventTable->currentIndex();
     if(!index.isValid())

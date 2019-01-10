@@ -9,7 +9,7 @@
 
 using namespace Support;
 
-__project::FileSymbo::FileSymbo(QDomElement dom):
+__projectsymbo::FileSymbo::FileSymbo(QDomElement dom):
     QStandardItem (dom.attribute("name")),
     domData(dom)
 {
@@ -18,27 +18,27 @@ __project::FileSymbo::FileSymbo(QDomElement dom):
     this->setIcon(icon);
 }
 
-__project::FileSymbo::~FileSymbo(){}
+__projectsymbo::FileSymbo::~FileSymbo(){}
 
-QString __project::FileSymbo::getRefPath()
+QString __projectsymbo::FileSymbo::getRefPath()
 {
     return this->domData.attribute("ref");
 }
 
-QDomElement &__project::FileSymbo::getDom()
+QDomElement &__projectsymbo::FileSymbo::getDom()
 {
     return this->domData;
 }
 
 
-__project::GroupSymbo::GroupSymbo(QDomElement dom):
+__projectsymbo::GroupSymbo::GroupSymbo(QDomElement dom):
     FileSymbo (dom)
 {
     auto icon = QWidget().style()->standardIcon(QStyle::StandardPixmap::SP_DirIcon);
     this->setIcon(icon);
 }
 
-__project::GroupSymbo::~GroupSymbo()
+__projectsymbo::GroupSymbo::~GroupSymbo()
 {
 
 }
@@ -66,6 +66,13 @@ ProjectSymbo::ProjectSymbo(QObject *parent):
 
 ProjectSymbo::~ProjectSymbo()
 {
+    this->saveAllActived();
+    auto list = this->getActiveDocs();
+    for(int i=0; i<list.size(); ++i){
+        auto item = list.at(i);
+        this->closeDocumentWithoutSave(item);
+    }
+
     delete this->domData;
     delete this->structure;
 }
@@ -148,6 +155,8 @@ int ProjectSymbo::save(QString filePath)
     out.flush();
     file.flush();
     file.close();
+
+    this->saveAllActived();
 
     return 0;
 }
@@ -244,7 +253,7 @@ QStandardItem *ProjectSymbo::newFile(QString name)
     QString realPath = info.fileName();
     node.setAttribute("ref", realPath);
 
-    return new __project::FileSymbo(node);
+    return new __projectsymbo::FileSymbo(node);
 }
 
 QStandardItem *ProjectSymbo::newGroup(QString name)
@@ -269,30 +278,30 @@ QStandardItem *ProjectSymbo::newGroup(QString name)
     QString realPath = info.fileName();
     node.setAttribute("ref", realPath);
 
-    return new __project::GroupSymbo(node);
+    return new __projectsymbo::GroupSymbo(node);
 }
 
 void ProjectSymbo::insertItemUnder(QStandardItem *node, QStandardItem *parent, int index)
 {
     if(node == nullptr || parent==nullptr)
         return;
-    if(parent != nullptr && typeid (*parent) != typeid (__project::GroupSymbo))
+    if(parent != nullptr && typeid (*parent) != typeid (__projectsymbo::GroupSymbo))
         return;
     //索引必须指向确定项，以便插入到指定项目之前
     if(index < 0 || index >= parent->rowCount())
         return;
 
-    auto& domElm = dynamic_cast<__project::GroupSymbo*>(parent)->getDom();
+    auto& domElm = dynamic_cast<__projectsymbo::GroupSymbo*>(parent)->getDom();
     parent->insertRow(index, node);
     auto indexElm = domElm.childNodes().at(index);
-    domElm.insertBefore(dynamic_cast<__project::FileSymbo*>(node)->getDom(),indexElm);
+    domElm.insertBefore(dynamic_cast<__projectsymbo::FileSymbo*>(node)->getDom(),indexElm);
 }
 
 void ProjectSymbo::appendItemUnder(QStandardItem *node, QStandardItem *parent)
 {
-    auto& domElm = dynamic_cast<__project::GroupSymbo*>(parent)->getDom();
+    auto& domElm = dynamic_cast<__projectsymbo::GroupSymbo*>(parent)->getDom();
     parent->appendRow(node);
-    domElm.appendChild(dynamic_cast<__project::FileSymbo*>(node)->getDom());
+    domElm.appendChild(dynamic_cast<__projectsymbo::FileSymbo*>(node)->getDom());
 }
 
 void ProjectSymbo::removeItemUnder(QStandardItem *node, QStandardItem *parent)
@@ -308,9 +317,13 @@ void ProjectSymbo::removeItemUnder(QStandardItem *node, QStandardItem *parent)
     for(int i=0; i<parent->rowCount(); ++i){
         auto item = parent->child(i);
         if(item == node){
-            auto &dom = dynamic_cast<__project::GroupSymbo*>(parent)->getDom();
-            auto &child = dynamic_cast<__project::FileSymbo*>(node)->getDom();
-            QFile file(child.attribute("ref"));
+            auto &dom = dynamic_cast<__projectsymbo::GroupSymbo*>(parent)->getDom();
+            auto &child = dynamic_cast<__projectsymbo::FileSymbo*>(node)->getDom();
+            auto filePath = child.attribute("ref");
+            if(this->isActived(filePath)){
+                this->closeDocumentWithoutSave(filePath);
+            }
+            QFile file(filePath);
             if(file.exists())
                 file.remove();
             dom.removeChild(child);
@@ -324,18 +337,18 @@ QString ProjectSymbo::referenceFilePath(QStandardItem *node)
     if(node == nullptr)
         return QString();
 
-    return dynamic_cast<__project::FileSymbo*>(node)->getRefPath();
+    return dynamic_cast<__projectsymbo::FileSymbo*>(node)->getRefPath();
 }
 
 void ProjectSymbo::parseStructureDom(QDomElement dom,QStandardItem* group)
 {
     auto children = dom.childNodes();
 
-    __project::FileSymbo *xtem = nullptr;
+    __projectsymbo::FileSymbo *xtem = nullptr;
     if(dom.tagName() == "group" || dom.tagName()=="content"){
-        xtem = new __project::GroupSymbo(dom);
+        xtem = new __projectsymbo::GroupSymbo(dom);
     }else if (dom.tagName() == "file") {
-        xtem = new __project::FileSymbo(dom);
+        xtem = new __projectsymbo::FileSymbo(dom);
     }
     QList<QStandardItem*>list;
     list.append(xtem);
@@ -355,12 +368,11 @@ void ProjectSymbo::parseStructureDom(QDomElement dom,QStandardItem* group)
 
 void ProjectSymbo::slot_nodeModify(QStandardItem *item)
 {
-    auto item2 = dynamic_cast<__project::FileSymbo*>(item);
+    auto item2 = dynamic_cast<__projectsymbo::FileSymbo*>(item);
     auto value = item->text();
     QDomElement& dom_ = item2->getDom();
     dom_.setAttribute("name", value);
 }
-
 
 
 

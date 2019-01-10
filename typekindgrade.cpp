@@ -1,4 +1,4 @@
-#include "components.h"
+#include "typekindgrade.h"
 
 #include <QGridLayout>
 #include <QLabel>
@@ -8,7 +8,9 @@
 #include <QDebug>
 #include <iostream>
 
-UIComp::GTME::GTME(QWidget *parent):
+using namespace Editor;
+
+TypeKindGrade::TypeKindGrade(QWidget *parent):
     QDialog (parent),
     groups(new QComboBox),
     types(new QComboBox),
@@ -34,33 +36,33 @@ UIComp::GTME::GTME(QWidget *parent):
     this->groups->addItem("<手动选择>");
     this->groups->setCurrentIndex(3);
     this->connect(this->groups, &QComboBox::currentTextChanged,
-                  this,         &GTME::slot_groupsSelected);
+                  this,         &TypeKindGrade::slot_groupsSelected);
     x->addWidget(new QLabel(tr("类别")), 0, 3);
     x->addWidget(this->types, 0, 4, 1, 2);
     this->connect(this->types,  &QComboBox::currentTextChanged,
-                  this,         &GTME::slot_typesSelected);
+                  this,         &TypeKindGrade::slot_typesSelected);
 
     x->addWidget(this->insertType, 0, 6);
     this->insertType->setEnabled(false);
     this->connect(this->insertType, &QPushButton::clicked,
-                  this, &GTME::slot_insertNewType);
+                  this, &TypeKindGrade::slot_insertNewType);
     x->addWidget(this->items, 1, 0, 8, 6);
     this->items->setModel(this->itemsmodel);
     x->addWidget(this->up, 1, 6);
     this->connect(up, &QPushButton::clicked,
-                  this,&GTME::slot_itemUp);
+                  this,&TypeKindGrade::slot_itemUp);
     x->addWidget(this->down,2,6);
     this->connect(down,&QPushButton::clicked,
-                  this,&GTME::slot_itemDown);
+                  this,&TypeKindGrade::slot_itemDown);
     x->addWidget(this->append,3,6);
     this->connect(append,&QPushButton::clicked,
-                  this,&GTME::slot_itemAppend);
+                  this,&TypeKindGrade::slot_itemAppend);
     x->addWidget(this->remove,4,6);
     this->connect(remove,&QPushButton::clicked,
-                  this,&GTME::slot_itemRemove);
+                  this,&TypeKindGrade::slot_itemRemove);
     x->addWidget(this->apply, 8, 6);
     this->connect(this->apply, &QPushButton::clicked,
-                  this,&GTME::slot_itemApply);
+                  this,&TypeKindGrade::slot_itemApply);
 
     this->up->setEnabled(false);
     this->down->setEnabled(false);
@@ -70,12 +72,12 @@ UIComp::GTME::GTME(QWidget *parent):
 
     auto s_model = this->items->selectionModel();
     this->connect(s_model, &QItemSelectionModel::selectionChanged,
-                  this,    &GTME::slot_btnEnableRelyOnSelect);
+                  this,    &TypeKindGrade::slot_btnEnableRelyOnSelect);
     this->connect(this->itemsmodel, &QStandardItemModel::itemChanged,
-                  this,             &GTME::slot_btnApplyRespond);
+                  this,             &TypeKindGrade::slot_btnApplyRespond);
 }
 
-UIComp::GTME::~GTME()
+TypeKindGrade::~TypeKindGrade()
 {
     delete this->groups;
     delete this->types;
@@ -89,7 +91,7 @@ UIComp::GTME::~GTME()
     delete insertType;
 }
 
-void UIComp::GTME::slot_groupsSelected(const QString &text)
+void TypeKindGrade::slot_groupsSelected(const QString &text)
 {
     this->types->setEditable(false);
     if(text == "<手动选择>"){
@@ -118,7 +120,7 @@ void UIComp::GTME::slot_groupsSelected(const QString &text)
     }
 }
 
-void UIComp::GTME::slot_typesSelected(const QString &text)
+void TypeKindGrade::slot_typesSelected(const QString &text)
 {
     this->itemsmodel->clear();
     if(text == "<编辑&添加>"){
@@ -174,7 +176,7 @@ void UIComp::GTME::slot_typesSelected(const QString &text)
     }
 }
 
-void UIComp::GTME::slot_insertNewType()
+void TypeKindGrade::slot_insertNewType()
 {
     QString exeStr  = "insert into table_gtm "
                       "(group_name,type_name,mark_number,mark_name,comment) "
@@ -196,7 +198,7 @@ void UIComp::GTME::slot_insertNewType()
     this->types->setEditable(false);
 }
 
-void UIComp::GTME::slot_itemUp()
+void TypeKindGrade::slot_itemUp()
 {
     auto x = this->items->currentIndex();
     auto target = itemsmodel->takeRow(x.row());
@@ -204,7 +206,7 @@ void UIComp::GTME::slot_itemUp()
     this->apply->setEnabled(true);
 }
 
-void UIComp::GTME::slot_itemDown()
+void TypeKindGrade::slot_itemDown()
 {
     auto x = this->items->currentIndex();
     auto target = itemsmodel->takeRow(x.row());
@@ -212,7 +214,7 @@ void UIComp::GTME::slot_itemDown()
     this->apply->setEnabled(true);
 }
 
-void UIComp::GTME::slot_itemAppend()
+void TypeKindGrade::slot_itemAppend()
 {
     auto xv1 = new QStandardItem("双击修改名称");
     xv1->setEditable(true);
@@ -226,7 +228,7 @@ void UIComp::GTME::slot_itemAppend()
     this->apply->setEnabled(true);
 }
 
-void UIComp::GTME::slot_itemRemove()
+void TypeKindGrade::slot_itemRemove()
 {
     auto x = this->items->currentIndex();
     if(this->itemsmodel->rowCount() == 1)
@@ -236,7 +238,7 @@ void UIComp::GTME::slot_itemRemove()
     this->apply->setEnabled(true);
 }
 
-void UIComp::GTME::slot_itemApply()
+void TypeKindGrade::slot_itemApply()
 {
     auto groupName = this->groups->currentText();
     auto typeName = this->types->currentText();
@@ -317,7 +319,7 @@ void UIComp::GTME::slot_itemApply()
     this->apply->setEnabled(false);
 }
 
-void UIComp::GTME::slot_btnEnableRelyOnSelect(const QItemSelection &selected, const QItemSelection &)
+void TypeKindGrade::slot_btnEnableRelyOnSelect(const QItemSelection &selected, const QItemSelection &)
 {
     auto index = selected.indexes().at(0);
     this->up->setEnabled(true);
@@ -333,7 +335,7 @@ void UIComp::GTME::slot_btnEnableRelyOnSelect(const QItemSelection &selected, co
     }
 }
 
-void UIComp::GTME::slot_btnApplyRespond(QStandardItem *)
+void TypeKindGrade::slot_btnApplyRespond(QStandardItem *)
 {
     this->apply->setEnabled(true);
 }

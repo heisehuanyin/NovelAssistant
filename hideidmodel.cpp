@@ -1,4 +1,4 @@
-#include "hiddedidmodel.h"
+#include "hideidmodel.h"
 
 #include <QSqlQuery>
 #include <QDebug>
@@ -7,24 +7,24 @@
 
 using namespace Support;
 
-HiddenIdModel::HiddenIdModel(QObject *parent):
+HideIdModel::HideIdModel(QObject *parent):
     QAbstractTableModel (parent),
     checkable(false)
 {
 
 }
 
-HiddenIdModel::~HiddenIdModel()
+HideIdModel::~HideIdModel()
 {
 
 }
 
-void HiddenIdModel::changeCheckable(bool value)
+void HideIdModel::changeCheckable(bool value)
 {
     this->checkable = value;
 }
 
-void HiddenIdModel::setQuery(int valueCount, QString sqlStatement, int indexOfId)
+void HideIdModel::setQuery(int valueCount, QString sqlStatement, int indexOfId)
 {
     this->beginResetModel();
     QSqlQuery q;
@@ -61,7 +61,7 @@ void HiddenIdModel::setQuery(int valueCount, QString sqlStatement, int indexOfId
     this->endResetModel();
 }
 
-void HiddenIdModel::clear()
+void HideIdModel::clear()
 {
     this->beginResetModel();
     this->contents.clear();
@@ -69,7 +69,7 @@ void HiddenIdModel::clear()
     this->endResetModel();
 }
 
-void HiddenIdModel::setHorizontalHeader(int index, QString header)
+void HideIdModel::setHorizontalHeader(int index, QString header)
 {
     if(index >= this->headers.size())
         return;
@@ -78,7 +78,7 @@ void HiddenIdModel::setHorizontalHeader(int index, QString header)
     this->endResetModel();
 }
 
-void HiddenIdModel::setSelectedDetermine(QString sqlStatement)
+void HideIdModel::setSelectedDetermine(QString sqlStatement)
 {
     this->beginResetModel();
 
@@ -106,12 +106,12 @@ void HiddenIdModel::setSelectedDetermine(QString sqlStatement)
     this->endResetModel();
 }
 
-QList<QVariant> HiddenIdModel::selectedRecordIDs()
+QList<QVariant> HideIdModel::selectedRecordIDs()
 {
     return this->selectedIDs;
 }
 
-QVariant HiddenIdModel::oppositeID(QModelIndex &index)
+QVariant HideIdModel::oppositeID(QModelIndex &index)
 {
     if(!index.isValid())
         return QVariant();
@@ -121,19 +121,19 @@ QVariant HiddenIdModel::oppositeID(QModelIndex &index)
     return QVariant();
 }
 
-int HiddenIdModel::rowCount(const QModelIndex &) const
+int HideIdModel::rowCount(const QModelIndex &) const
 {
     return this->contents.length();
 }
 
-int HiddenIdModel::columnCount(const QModelIndex &) const
+int HideIdModel::columnCount(const QModelIndex &) const
 {
     if(this->contents.size()==0)
         return 0;
     return this->contents.at(0).second.length();
 }
 
-Qt::ItemFlags HiddenIdModel::flags(const QModelIndex &index) const
+Qt::ItemFlags HideIdModel::flags(const QModelIndex &index) const
 {
     Qt::ItemFlags ret = Qt::ItemIsEnabled;
 
@@ -146,7 +146,7 @@ Qt::ItemFlags HiddenIdModel::flags(const QModelIndex &index) const
     return ret | QAbstractItemModel::flags(index);
 }
 
-QVariant HiddenIdModel::data(const QModelIndex &index, int role) const
+QVariant HideIdModel::data(const QModelIndex &index, int role) const
 {
     if((!index.isValid()) || (index.row() > this->contents.size()))
         return QVariant();
@@ -165,7 +165,7 @@ QVariant HiddenIdModel::data(const QModelIndex &index, int role) const
     return this->contents.at(index.row()).second.at(index.column());
 }
 
-QVariant HiddenIdModel::headerData(int section, Qt::Orientation orientation, int role) const
+QVariant HideIdModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
     if(role != Qt::DisplayRole)
         return QVariant();
@@ -179,7 +179,7 @@ QVariant HiddenIdModel::headerData(int section, Qt::Orientation orientation, int
         return QString("%1").arg(section);
 }
 
-bool HiddenIdModel::setData(const QModelIndex &index, const QVariant &value, int role)
+bool HideIdModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
     if((!index.isValid()) || (index.row() > this->contents.size()))
         return false;

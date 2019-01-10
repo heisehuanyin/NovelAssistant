@@ -2,8 +2,8 @@
 
 #include <QMouseEvent>
 
-using namespace UIComp;
-
+using namespace Component;
+using namespace Component::__storydisplay;
 
 TimePoint::TimePoint(qlonglong time, TimePoint *nextRef):
     tTime(time),
@@ -318,6 +318,12 @@ void StoryDisplay::addEvent(const qlonglong idNum, EventSymbo * const symbo){
 
     auto size = this->canvas->getFitSize();
     this->canvas->resize(size.width(), size.height());
+}
+
+void StoryDisplay::addEvent(const qlonglong idNum, QString name, qlonglong startT, qlonglong endT)
+{
+    auto symbo = new EventSymbo(name, startT, endT);
+    this->addEvent(idNum, symbo);
 }
 
 void StoryDisplay::removeEvent(const qlonglong idNum){

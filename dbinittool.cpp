@@ -1,4 +1,4 @@
-#include "sqlport.h"
+#include "dbinittool.h"
 
 #include <QSqlQuery>
 

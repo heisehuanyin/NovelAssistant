@@ -1,14 +1,14 @@
 #include "edserver.h"
-#include "mainwindow.h"
+#include "frontend.h"
 #include "docmanager.h"
 #include "projectsymbo.h"
-#include "sqlport.h"
-#include "eventnodeedit.h"
-#include "locationedit.h"
-#include "propedit.h"
-#include "skilledit.h"
-#include "components.h"
-#include "charedit.h"
+#include "dbinittool.h"
+#include "eventnodes.h"
+#include "location.h"
+#include "items.h"
+#include "ability.h"
+#include "typekindgrade.h"
+#include "character.h"
 
 #include <QApplication>
 #include <QFileDialog>
@@ -50,12 +50,6 @@ void EdServer::slot_closeProject()
 {
     this->pjtSymbo->save();
 
-    this->manager->saveAll();
-    auto list = this->manager->getAllDocuments();
-    for(int i=0; i<list.size(); ++i){
-        this->manager->closeDocumentWithoutSave(list.takeAt(i));
-    }
-
     delete this->pjtSymbo;
     this->pjtSymbo = nullptr;
 
@@ -65,7 +59,6 @@ void EdServer::slot_closeProject()
 void EdServer::slot_saveAll()
 {
     this->pjtSymbo->save();
-    this->manager->saveAll();
 }
 
 void EdServer::slot_openWithinProject(const QModelIndex &index)
@@ -78,18 +71,18 @@ void EdServer::slot_openWithinProject(const QModelIndex &index)
     auto path = this->pjtSymbo->referenceFilePath(item);
 
     QTextEdit *edit = nullptr;
-    this->manager->openDocument(path, &edit);
+    this->pjtSymbo->openDocument(path, &edit);
     this->mainView->addDocumentView(item->text(), edit);
 }
 
 void EdServer::slot_closeTargetView(QTextEdit *view)
 {
-    auto label = this->manager->returnDocpath(view);
+    auto label = this->pjtSymbo->returnDocpath(view);
     if(label == QString())
         return;
 
-    this->manager->saveDocument(label);
-    this->manager->closeDocumentWithoutSave(label);
+    this->pjtSymbo->saveDocument(label);
+    this->pjtSymbo->closeDocumentWithoutSave(label);
 }
 
 void EdServer::slot_newFileNode(const QModelIndex &index)
@@ -98,7 +91,7 @@ void EdServer::slot_newFileNode(const QModelIndex &index)
         return;
 
     auto node = this->pjtSymbo->getStructure()->itemFromIndex(index);
-    if(typeid (*node) == typeid (Support::__project::FileSymbo)){
+    if(typeid (*node) == typeid (Support::__projectsymbo::FileSymbo)){
         auto newIndex = this->pjtSymbo->newFile(tr("新章节"), index.parent());
         this->pjtSymbo->moveNodeTo(newIndex, index.sibling(index.row()+1, index.column()));
     }else{
@@ -112,7 +105,7 @@ void EdServer::slot_newGroupNode(const QModelIndex &index)
         return;
 
     auto node = this->pjtSymbo->getStructure()->itemFromIndex(index);
-    if(typeid (*node) == typeid (Support::__project::FileSymbo)){
+    if(typeid (*node) == typeid (Support::__projectsymbo::FileSymbo)){
         auto newIndex = this->pjtSymbo->newGroup(tr("新集合"), index.parent());
         this->pjtSymbo->moveNodeTo(newIndex, index.sibling(index.row()+1, index.column()));
     }else{
@@ -137,27 +130,27 @@ void EdServer::slot_ResponseToolsAct(QAction *act)
 {
     auto text = act->text();
     if(text == tr("等级编辑")){
-        UIComp::GTME x(this->mainView);
+        Editor::TypeKindGrade x(this->mainView);
         x.exec();
     }
     if(text == tr("道具编辑")){
-        UIComp::PropEdit x(this->mainView);
+        Editor::Items x(this->mainView);
         x.exec();
     }
     if(text == tr("技能编辑")){
-        UIComp::SkillEdit x(this->mainView);
+        Editor::Ability x(this->mainView);
         x.exec();
     }
     if(text == tr("地点编辑")){
-        UIComp::LocationEdit x(this->mainView);
+        Editor::Location x(this->mainView);
         x.exec();
     }
     if(text == tr("人物编辑")){
-        UIComp::CharEdit x(this->mainView);
+        Editor::Character x(this->mainView);
         x.exec();
     }
     if(text == tr("事件编辑")){
-        UIComp::EventnodeEdit x(this->mainView);
+        Editor::EventNodes x(this->mainView);
         x.exec();
     }
 }
@@ -168,8 +161,7 @@ void EdServer::exit()
 }
 
 EdServer::EdServer(QString title):
-    mainView(new UIComp::MainWindow),
-    manager(new Support::DocManager),
+    mainView(new FrontEnd),
     pjtSymbo(nullptr)
 {
     this->mainView->setWindowTitle(title);
@@ -178,7 +170,6 @@ EdServer::EdServer(QString title):
 EdServer::~EdServer()
 {
     delete this->dbTool;
-    delete this->manager;
     delete this->pjtSymbo;
     delete this->mainView;
 }
@@ -191,17 +182,17 @@ void EdServer::openNovelDatabase(QString pjtPath)
     this->refreshUIStatus();
     this->mainView->setProjectTree(this->pjtSymbo->getStructure());
 
-    this->connect(this->mainView,   &UIComp::MainWindow::signal_openWithinProject,
+    this->connect(this->mainView,   &FrontEnd::signal_openWithinProject,
                   this,             &EdServer::slot_openWithinProject);
-    this->connect(this->mainView,   &UIComp::MainWindow::signal_closeTargetView,
+    this->connect(this->mainView,   &FrontEnd::signal_closeTargetView,
                   this,             &EdServer::slot_closeTargetView);
-    this->connect(this->mainView,   &UIComp::MainWindow::signal_newFile,
+    this->connect(this->mainView,   &FrontEnd::signal_newFile,
                   this,             &EdServer::slot_newFileNode);
-    this->connect(this->mainView,   &UIComp::MainWindow::signal_newGroup,
+    this->connect(this->mainView,   &FrontEnd::signal_newGroup,
                   this,             &EdServer::slot_newGroupNode);
-    this->connect(this->mainView,   &UIComp::MainWindow::signal_removeNode,
+    this->connect(this->mainView,   &FrontEnd::signal_removeNode,
                   this,             &EdServer::slot_removeNode);
-    this->connect(this->mainView,   &UIComp::MainWindow::signal_moveNode,
+    this->connect(this->mainView,   &FrontEnd::signal_moveNode,
                   this,             &EdServer::slot_NodeMove);
 }
 
