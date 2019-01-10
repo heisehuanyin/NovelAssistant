@@ -3,7 +3,7 @@
 #include <QApplication>
 #include <QStyle>
 #include <QTextEdit>
-#include "characteredit.h"
+#include "charedit.h"
 #include "components.h"
 #include "locationedit.h"
 #include "propedit.h"

@@ -46,7 +46,7 @@ public:
      * @brief 获取所有打开文档
      * @return 文档key集合
      */
-    QList<QString> getAllDocuments();
+    QList<QString> getActiveDocs();
 
     /**
      * @brief 强制关闭指定文档，不保存

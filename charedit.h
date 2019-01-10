@@ -16,12 +16,12 @@
 
 namespace UIComp {
 
-    class CharacterEdit:public QDialog
+    class CharEdit:public QDialog
     {
         Q_OBJECT
     public:
-        explicit CharacterEdit(QWidget * const parent=nullptr);
-        virtual ~CharacterEdit();
+        explicit CharEdit(QWidget * const parent=nullptr);
+        virtual ~CharEdit();
 
         /**
          * @brief 获取选中条目id集合

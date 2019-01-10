@@ -8,7 +8,7 @@
 #include "propedit.h"
 #include "skilledit.h"
 #include "components.h"
-#include "characteredit.h"
+#include "charedit.h"
 
 #include <QApplication>
 #include <QFileDialog>
@@ -153,7 +153,7 @@ void EdServer::slot_ResponseToolsAct(QAction *act)
         x.exec();
     }
     if(text == tr("人物编辑")){
-        UIComp::CharacterEdit x(this->mainView);
+        UIComp::CharEdit x(this->mainView);
         x.exec();
     }
     if(text == tr("事件编辑")){

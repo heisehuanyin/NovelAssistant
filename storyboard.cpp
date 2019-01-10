@@ -2,7 +2,7 @@
 #include "storyboard.h"
 #include "propedit.h"
 #include "skilledit.h"
-#include "characteredit.h"
+#include "charedit.h"
 
 #include <QGridLayout>
 #include <QGroupBox>
@@ -787,7 +787,7 @@ void UIComp::StoryBoard::slot_Response4AddRelation()
         return;
     }
     QVariantList target, evnodes, host;
-    auto list = CharacterEdit::getSelectedItems();
+    auto list = CharEdit::getSelectedItems();
     for(int i=0; i<list.size(); ++i){
         auto item = list.at(i);
         if(this->ids_relate.contains(item.toLongLong()))

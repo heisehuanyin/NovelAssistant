@@ -78,7 +78,7 @@ int DocManager::saveAll()
     return 0;
 }
 
-QList<QString> DocManager::getAllDocuments()
+QList<QString> DocManager::getActiveDocs()
 {
     return this->docCon.keys();
 }

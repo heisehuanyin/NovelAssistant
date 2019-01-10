@@ -27,7 +27,6 @@ DEFINES += QT_DEPRECATED_WARNINGS
 CONFIG += c++11
 
 SOURCES += \
-    characteredit.cpp \
     components.cpp \
     eventnodeedit.cpp \
     hiddenidmodel.cpp \
@@ -42,10 +41,10 @@ SOURCES += \
     superdatetool.cpp \
     docmanager.cpp \
     edserver.cpp \
-    projectsymbo.cpp
+    projectsymbo.cpp \
+    charedit.cpp
 
 HEADERS += \
-    characteredit.h \
     components.h \
     eventnodeedit.h \
     hiddedidmodel.h \
@@ -59,7 +58,8 @@ HEADERS += \
     superdatetool.h \
     docmanager.h \
     edserver.h \
-    projectsymbo.h
+    projectsymbo.h \
+    charedit.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
