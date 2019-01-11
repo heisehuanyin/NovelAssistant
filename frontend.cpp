@@ -93,7 +93,7 @@ QWidget *FrontEnd::generateWelcomePanel()
 
 void FrontEnd::slot_receptOpenDocument(const QModelIndex &index)
 {
-    emit this->signal_openWithinProject(index);
+    emit this->signal_openProjectItem(index);
 }
 
 void FrontEnd::slot_receptCloseDocument(int index)

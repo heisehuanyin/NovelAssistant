@@ -17,8 +17,10 @@
 
 void EdServer::slot_newProject()
 {
-    QString fileName = QFileDialog::getSaveFileName(this->mainView, tr("新建项目"),
-                                                    QDir::currentPath(), tr("WsNovel (*.wsnovel )"));
+    QString fileName = QFileDialog::getSaveFileName(
+                this->mainView, tr("新建项目"),
+                QDir::currentPath(), tr("WsNovel (*.wsnovel )"));
+
     if(fileName == QString())
         return;
     QFileInfo info(fileName);
@@ -35,8 +37,9 @@ void EdServer::slot_newProject()
 
 void EdServer::slot_openProject()
 {
-    QString fileName = QFileDialog::getOpenFileName(this->mainView, tr("打开项目"), QDir::currentPath()
-                                                    , tr("WsNovel (*.wsnovel )"));
+    QString fileName = QFileDialog::getOpenFileName(
+                this->mainView, tr("打开项目"), QDir::currentPath(),
+                tr("WsNovel (*.wsnovel )"));
     if(fileName == QString())
         return;
 
@@ -75,12 +78,8 @@ void EdServer::slot_openItem(const QModelIndex &index)
 
 void EdServer::slot_closeTargetView(QTextEdit *view)
 {
-    auto label = this->pjtSymbo->returnDocpath(view);
-    if(label == QString())
-        return;
-
-    this->pjtSymbo->saveDocument(label);
-    this->pjtSymbo->closeDocumentWithoutSave(label);
+    auto index = this->pjtSymbo->getIndexofDocumentView(view);
+    this->pjtSymbo->closeDocument(index);
 
     this->mainView->addDocumentView("", nullptr);
 }
@@ -92,10 +91,10 @@ void EdServer::slot_newFileNode(const QModelIndex &index)
 
     auto node = this->pjtSymbo->getStructure()->itemFromIndex(index);
     if(typeid (*node) == typeid (Support::__projectsymbo::FileSymbo)){
-        auto newIndex = this->pjtSymbo->newFile(tr("新章节"), index.parent());
+        auto newIndex = this->pjtSymbo->newChildFile(tr("新章节"), index.parent());
         this->pjtSymbo->moveNodeTo(newIndex, index.sibling(index.row()+1, index.column()));
     }else{
-        this->pjtSymbo->newFile(tr("新章节"), index);
+        this->pjtSymbo->newChildFile(tr("新章节"), index);
     }
 }
 
@@ -106,10 +105,10 @@ void EdServer::slot_newGroupNode(const QModelIndex &index)
 
     auto node = this->pjtSymbo->getStructure()->itemFromIndex(index);
     if(typeid (*node) == typeid (Support::__projectsymbo::FileSymbo)){
-        auto newIndex = this->pjtSymbo->newGroup(tr("新集合"), index.parent());
+        auto newIndex = this->pjtSymbo->newChildGroup(tr("新集合"), index.parent());
         this->pjtSymbo->moveNodeTo(newIndex, index.sibling(index.row()+1, index.column()));
     }else{
-        this->pjtSymbo->newGroup(tr("新集合"), index);
+        this->pjtSymbo->newChildGroup(tr("新集合"), index);
     }
 }
 
@@ -189,7 +188,7 @@ void EdServer::openNovelDatabase(QString pjtPath)
     this->refreshUIStatus();
     this->mainView->setProjectTree(this->pjtSymbo->getStructure());
 
-    this->connect(this->mainView,   &FrontEnd::signal_openWithinProject,
+    this->connect(this->mainView,   &FrontEnd::signal_openProjectItem,
                   this,             &EdServer::slot_openItem);
     this->connect(this->mainView,   &FrontEnd::signal_closeTargetView,
                   this,             &EdServer::slot_closeTargetView);

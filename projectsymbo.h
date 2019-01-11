@@ -31,7 +31,7 @@ namespace __projectsymbo {
 /**
  * @brief 本类型用于代表项目本身，针对项目进行的操作都转化为对本类型示例的操作
  */
-class ProjectSymbo : public QObject, public __projectsymbo::DocManager
+class ProjectSymbo : public QObject, private __projectsymbo::DocManager
 {
     Q_OBJECT
 
@@ -46,6 +46,7 @@ public:
     explicit ProjectSymbo(QObject *parent = nullptr);
     virtual ~ProjectSymbo();
 
+    //Config Service=========================
     /**
      * @brief 获取项目配置信息
      * @param key 配置键
@@ -61,6 +62,7 @@ public:
 
 
 
+    //Project Operate========================
     /**
      * @brief 打开项目文件，提取内容
      * @param filePath 项目路径，项目指向
@@ -73,52 +75,36 @@ public:
      */
     QString projectPath();
     /**
+     * @brief 获取项目结构
+     * @return 树模型
+     */
+    QStandardItemModel* getStructure();
+    /**
      * @brief 保存项目文件，filePath !=QString() 另存为且改变指向
      * @param filePath 路径
      * @return 0,成功；-1,失败
      */
     int saveProject(QString filePath=QString());
-
-
-    /**
-     * @brief 通过modelindex打开项目结构中对应的文档视图，如果文档已打开，返回对应视图
-     * @param index modelIndex
-     * @param title 视图标题
-     * @param view 返回视图
-     */
-    void openDocument(const QModelIndex &index, QString &title, QTextEdit** view);
-
-    void closeDocument(const QModelIndex &index);
-
-    /**
-     * @brief 获取项目结构
-     * @return 树模型
-     */
-    QStandardItemModel* getStructure();
-
     /**
      * @brief 在指定父节点下新建项目文件节点
      * @param name 节点名称
      * @param parent 父节点索引
      * @return 新节点的索引
      */
-    QModelIndex newFile(QString name, const QModelIndex &parent);
-
+    QModelIndex newChildFile(QString name, const QModelIndex &parent);
     /**
      * @brief 在指定父节点下新建项目集合节点
      * @param name 节点名称
      * @param parent 父节点索引
      * @return 新节点索引
      */
-    QModelIndex newGroup(QString name, const QModelIndex &parent);
-
+    QModelIndex newChildGroup(QString name, const QModelIndex &parent);
     /**
      * @brief 删除指定索引指向的节点
      * @warning 不可删除根节点
      * @param target 指定节点索引
      */
     void removeNode(const QModelIndex &target);
-
     /**
      * @brief 将from指向的节点，移动到to索引位置
      * @warning from和to都必须是根节点的后代节点
@@ -127,29 +113,47 @@ public:
      */
     void moveNodeTo(const QModelIndex &from, const QModelIndex &to);
 
+
+
+
+    //Document Operate=======================
     /**
-     * @brief 获取模型节点指向的文件路径
-     * @param node 此节点出自于本项目模型
-     * @return 路径
+     * @brief 通过modelindex打开项目结构中对应的文档视图，如果文档已打开，返回对应视图
+     * @param index modelIndex
+     * @param title 视图标题
+     * @param view 返回视图
      */
-    QString referenceFilePath(QStandardItem* node);
+    void openDocument(const QModelIndex &index, QString &title, QTextEdit** view);
+    /**
+     * @brief 关闭指定文档
+     * @param index itemIndex
+     */
+    void closeDocument(const QModelIndex &index);
+    /**
+     * @brief 获取视图对应的ModelIndex
+     * @param view 编辑视图
+     * @return Index
+     */
+    QModelIndex getIndexofDocumentView(QTextEdit *view);
 
 private:
     QStandardItemModel*const structure;
     QDomDocument*const domData;
     QString pjtPath;
+    QHash<QModelIndex, QString> list;
+
 
     /**
      * @brief 通过模型接口创建一个文件节点
      * @return 文件节点
      */
-    QStandardItem* newFile(QString name);
+    QStandardItem* newChildFile(QString name);
 
     /**
      * @brief 通过模型接口创建一个集合节点
      * @return 集合节点
      */
-    QStandardItem* newGroup(QString name);
+    QStandardItem* newChildGroup(QString name);
 
     /**
      * @brief 将特定节点node插入到指定节点parent的指定位序下，两个节点都必须存在,索引小于parent.rowCount

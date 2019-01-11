@@ -142,7 +142,8 @@ void ProjectSymbo::openDocument(const QModelIndex &index, QString &title, QTextE
     auto xitem = dynamic_cast<__projectsymbo::FileSymbo*>(item);
 
     title = xitem->text();
-    DocManager::openDocument(xitem->getRefPath(),view);
+    this->list.insert(index, title);
+    this->DocManager::openDocument(xitem->getRefPath(),view);
 }
 
 void ProjectSymbo::closeDocument(const QModelIndex &index)
@@ -153,7 +154,15 @@ void ProjectSymbo::closeDocument(const QModelIndex &index)
     auto item = this->structure->itemFromIndex(index);
     auto xitem = dynamic_cast<__projectsymbo::FileSymbo*>(item);
 
+    this->list.remove(index);
+    this->saveDocument(xitem->getRefPath());
     this->closeDocumentWithoutSave(xitem->getRefPath());
+}
+
+QModelIndex ProjectSymbo::getIndexofDocumentView(QTextEdit *view)
+{
+    auto path = this->returnDocpath(view);
+    return this->list.key(path);
 }
 
 int ProjectSymbo::saveProject(QString filePath)
@@ -184,24 +193,24 @@ QStandardItemModel *ProjectSymbo::getStructure()
     return this->structure;
 }
 
-QModelIndex ProjectSymbo::newFile(QString name, const QModelIndex &parent)
+QModelIndex ProjectSymbo::newChildFile(QString name, const QModelIndex &parent)
 {
     if(!parent.isValid())
         return QModelIndex();
 
-    auto newf = this->newFile(name);
+    auto newf = this->newChildFile(name);
     auto prnt = this->structure->itemFromIndex(parent);
     this->appendItemUnder(newf, prnt);
 
     return newf->index();
 }
 
-QModelIndex ProjectSymbo::newGroup(QString name, const QModelIndex &parent)
+QModelIndex ProjectSymbo::newChildGroup(QString name, const QModelIndex &parent)
 {
     if(!parent.isValid())
         return QModelIndex();
 
-    auto newg = this->newGroup(name);
+    auto newg = this->newChildGroup(name);
     auto prnt = this->structure->itemFromIndex(parent);
     this->appendItemUnder(newg, prnt);
 
@@ -249,7 +258,7 @@ void ProjectSymbo::moveNodeTo(const QModelIndex &from, const QModelIndex &to)
     }
 }
 
-QStandardItem *ProjectSymbo::newFile(QString name)
+QStandardItem *ProjectSymbo::newChildFile(QString name)
 {
     auto node = this->domData->createElement("file");
     node.setAttribute("name", name);
@@ -274,7 +283,7 @@ QStandardItem *ProjectSymbo::newFile(QString name)
     return new __projectsymbo::FileSymbo(node);
 }
 
-QStandardItem *ProjectSymbo::newGroup(QString name)
+QStandardItem *ProjectSymbo::newChildGroup(QString name)
 {
     auto node = this->domData->createElement("group");
     node.setAttribute("name", name);
@@ -348,14 +357,6 @@ void ProjectSymbo::removeItemUnder(QStandardItem *node, QStandardItem *parent)
             parent->removeRow(i);
         }
     }
-}
-
-QString ProjectSymbo::referenceFilePath(QStandardItem *node)
-{
-    if(node == nullptr)
-        return QString();
-
-    return dynamic_cast<__projectsymbo::FileSymbo*>(node)->getRefPath();
 }
 
 void ProjectSymbo::parseStructureDom(QDomElement dom,QStandardItem* group)
