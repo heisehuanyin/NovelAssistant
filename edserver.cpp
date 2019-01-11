@@ -9,6 +9,7 @@
 #include "ability.h"
 #include "typekindgrade.h"
 #include "character.h"
+#include "queryutility.h"
 
 #include <QApplication>
 #include <QFileDialog>
@@ -48,12 +49,13 @@ void EdServer::slot_openProject()
 
 void EdServer::slot_closeProject()
 {
-    this->pjtSymbo->saveProject();
-
     delete this->pjtSymbo;
     this->pjtSymbo = nullptr;
 
     this->refreshUIStatus();
+    this->queryUtility->hide();
+
+    this->mainView->addDocumentView("", nullptr);
 }
 
 void EdServer::slot_saveAll()
@@ -79,6 +81,8 @@ void EdServer::slot_closeTargetView(QTextEdit *view)
 
     this->pjtSymbo->saveDocument(label);
     this->pjtSymbo->closeDocumentWithoutSave(label);
+
+    this->mainView->addDocumentView("", nullptr);
 }
 
 void EdServer::slot_newFileNode(const QModelIndex &index)
@@ -158,9 +162,16 @@ void EdServer::exit()
 
 EdServer::EdServer(QString title):
     mainView(new FrontEnd),
-    pjtSymbo(nullptr)
+    pjtSymbo(nullptr),
+    toolsBar(new QToolBar(this->mainView)),
+    queryUtility(new Component::QueryUtility(this->mainView))
 {
     this->mainView->setWindowTitle(title);
+    this->mainView->addToolBar(this->toolsBar);
+
+    this->mainView->setQueryUtility(this->queryUtility);
+
+    this->queryUtility->hide();
 }
 
 EdServer::~EdServer()
@@ -190,6 +201,11 @@ void EdServer::openNovelDatabase(QString pjtPath)
                   this,             &EdServer::slot_removeNode);
     this->connect(this->mainView,   &FrontEnd::signal_moveNode,
                   this,             &EdServer::slot_NodeMove);
+
+    this->connect(this->pjtSymbo,   &Support::ProjectSymbo::signal_nodeModified,
+                  this,             &EdServer::slot_openItem);
+
+    this->queryUtility->setVisible(true);
 }
 
 void EdServer::refreshUIStatus()

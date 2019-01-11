@@ -34,6 +34,8 @@ private:
     FrontEnd *const mainView;
     Support::ProjectSymbo* pjtSymbo;
     Support::DBInitTool *dbTool;
+    QToolBar * const toolsBar;
+    Component::QueryUtility *const queryUtility;
 
     /**
      * @brief 打开小说数据库

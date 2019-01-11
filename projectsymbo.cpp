@@ -66,12 +66,7 @@ ProjectSymbo::ProjectSymbo(QObject *parent):
 
 ProjectSymbo::~ProjectSymbo()
 {
-    this->saveAllActived();
-    auto list = this->getActiveDocs();
-    for(int i=0; i<list.size(); ++i){
-        auto item = list.at(i);
-        this->closeDocumentWithoutSave(item);
-    }
+    this->saveProject();
 
     delete this->domData;
     delete this->structure;
@@ -148,6 +143,17 @@ void ProjectSymbo::openDocument(const QModelIndex &index, QString &title, QTextE
 
     title = xitem->text();
     DocManager::openDocument(xitem->getRefPath(),view);
+}
+
+void ProjectSymbo::closeDocument(const QModelIndex &index)
+{
+    if(!index.isValid())
+        return;
+
+    auto item = this->structure->itemFromIndex(index);
+    auto xitem = dynamic_cast<__projectsymbo::FileSymbo*>(item);
+
+    this->closeDocumentWithoutSave(xitem->getRefPath());
 }
 
 int ProjectSymbo::saveProject(QString filePath)
@@ -384,6 +390,8 @@ void ProjectSymbo::slot_nodeModify(QStandardItem *item)
     auto value = item->text();
     QDomElement& dom_ = item2->getDom();
     dom_.setAttribute("name", value);
+
+    emit this->signal_nodeModified(item->index());
 }
 
 

@@ -67,21 +67,28 @@ public:
      * @return 0,成功；-1,失败
      */
     int openProject(QString filePath);
-
     /**
      * @brief 返回项目路径
      * @return 项目路径
      */
     QString projectPath();
-
-    void openDocument(const QModelIndex &index, QString &title, QTextEdit** view);
-
     /**
      * @brief 保存项目文件，filePath !=QString() 另存为且改变指向
      * @param filePath 路径
      * @return 0,成功；-1,失败
      */
     int saveProject(QString filePath=QString());
+
+
+    /**
+     * @brief 通过modelindex打开项目结构中对应的文档视图，如果文档已打开，返回对应视图
+     * @param index modelIndex
+     * @param title 视图标题
+     * @param view 返回视图
+     */
+    void openDocument(const QModelIndex &index, QString &title, QTextEdit** view);
+
+    void closeDocument(const QModelIndex &index);
 
     /**
      * @brief 获取项目结构

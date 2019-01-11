@@ -1,14 +1,15 @@
 #include "frontend.h"
-
-#include <QApplication>
-#include <QStyle>
-#include <QTextEdit>
 #include "character.h"
 #include "typekindgrade.h"
 #include "location.h"
 #include "items.h"
 #include "ability.h"
 #include "eventnodes.h"
+#include "queryutility.h"
+
+#include <QApplication>
+#include <QStyle>
+#include <QTextEdit>
 
 using namespace Component;
 
@@ -17,8 +18,7 @@ FrontEnd::FrontEnd(QWidget *parent)
       baseFrame(new QSplitter(Qt::Horizontal, this)),
       pjtStructure(new QTreeView(this)),
       contentStack(new QTabWidget(this)),
-      welcome(this->generateWelcomePanel()),
-      rightSplit(new QSplitter(Qt::Vertical, this))
+      welcome(this->generateWelcomePanel())
 {
     this->setCentralWidget(this->baseFrame);
     this->baseFrame->addWidget(pjtStructure);
@@ -26,8 +26,6 @@ FrontEnd::FrontEnd(QWidget *parent)
 
     this->baseFrame->addWidget(contentStack);
     this->contentStack->setTabsClosable(true);
-
-    this->baseFrame->addWidget(rightSplit);
 
     this->connect(this->contentStack,   &QTabWidget::tabCloseRequested,
                   this,                 &FrontEnd::slot_receptCloseDocument);
@@ -54,9 +52,11 @@ void FrontEnd::openEmptyWindow(){
 
 void FrontEnd::addDocumentView(QString title, QWidget *view)
 {
+    this->refreshTabviewStatus();
+    if(!view) return;
+
     if(this->contentStack->count() == 1 &&
-            this->contentStack->widget(0) == this->welcome)
-    {
+            this->contentStack->widget(0) == this->welcome){
         this->contentStack->removeTab(0);
     }
 
@@ -71,6 +71,19 @@ void FrontEnd::setProjectTree(QStandardItemModel *model)
     delete xtemp;
     this->connect(this->pjtStructure,    &QTreeView::clicked,
                   this,     &FrontEnd::slot_receptOpenDocument);
+}
+
+void FrontEnd::setQueryUtility(QueryUtility *utility)
+{
+    this->baseFrame->addWidget(utility);
+}
+
+void FrontEnd::refreshTabviewStatus()
+{
+    if(this->contentStack->count() < 1){
+        this->pjtStructure->clearSelection();
+        this->contentStack->addTab(this->welcome, "Welcome");
+    }
 }
 
 QWidget *FrontEnd::generateWelcomePanel()
@@ -88,11 +101,7 @@ void FrontEnd::slot_receptCloseDocument(int index)
     auto widget = dynamic_cast<QTextEdit*>(this->contentStack->widget(index));
     emit this->signal_closeTargetView(widget);
 
-    if(this->contentStack->count() < 1){
-        this->pjtStructure->clearSelection();
-        this->contentStack->addTab(this->welcome, "Welcome");
-    }
-
+    this->refreshTabviewStatus();
 }
 
 void FrontEnd::slot_displayPopupMenu(const QPoint &point)

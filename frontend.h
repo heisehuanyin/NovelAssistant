@@ -11,6 +11,9 @@
 #include <QToolBar>
 #include <QToolBox>
 #include <QTreeView>
+namespace Component {
+    class QueryUtility;
+}
 
 class FrontEnd : public QMainWindow
 {
@@ -24,6 +27,8 @@ public:
     void addDocumentView(QString title, QWidget *view);
 
     void setProjectTree(QStandardItemModel *model);
+    void setQueryUtility(Component::QueryUtility* utility);
+
 
 signals:
     void signal_openWithinProject(const QModelIndex &index);
@@ -39,16 +44,21 @@ private:
     QTreeView *const pjtStructure;
     QTabWidget *const contentStack;
     QWidget *const welcome;
-    QSplitter *const rightSplit;
 
     QWidget* generateWelcomePanel();
+    void refreshTabviewStatus();
 
 private slots:
     void slot_receptOpenDocument(const QModelIndex &index);
+    /**
+     * @brief 接收关闭tab页信号
+     * @param index
+     */
     void slot_receptCloseDocument(int index);
 
     void slot_displayPopupMenu(const QPoint &point);
     void slot_ProjectManage(QAction* act);
+
 };
 
 
