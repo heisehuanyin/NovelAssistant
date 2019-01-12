@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
     auto val = a.exec();
 
     //默认自动保存左右状态
-    x.slot_saveAll();
+    x.saveAll();
     return val;
 
 }

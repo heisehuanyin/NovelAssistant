@@ -43,7 +43,8 @@ SOURCES += \
     ability.cpp \
     typekindgrade.cpp \
     dbinittool.cpp \
-    queryutility.cpp
+    queryutility.cpp \
+    syntaxhightlighter.cpp
 
 HEADERS += \
     storyboard.h \
@@ -61,7 +62,8 @@ HEADERS += \
     typekindgrade.h \
     dbinittool.h \
     hideidmodel.h \
-    queryutility.h
+    queryutility.h \
+    syntaxhightlighter.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

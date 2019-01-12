@@ -1,21 +1,22 @@
 #include "edserver.h"
 #include "frontend.h"
-#include "docmanager.h"
 #include "projectsymbo.h"
 #include "dbinittool.h"
-#include "eventnodes.h"
 #include "location.h"
 #include "items.h"
 #include "ability.h"
 #include "typekindgrade.h"
 #include "character.h"
 #include "queryutility.h"
+#include "frontend.h"
+#include "syntaxhightlighter.h"
+#include "eventnodes.h"
 
 #include <QApplication>
 #include <QFileDialog>
 #include <QMessageBox>
 
-void EdServer::slot_newProject()
+void EdServer::newProject()
 {
     QString fileName = QFileDialog::getSaveFileName(
                 this->mainView, tr("新建项目"),
@@ -35,7 +36,7 @@ void EdServer::slot_newProject()
     this->openNovelDatabase(info.path());
 }
 
-void EdServer::slot_openProject()
+void EdServer::openProject()
 {
     QString fileName = QFileDialog::getOpenFileName(
                 this->mainView, tr("打开项目"), QDir::currentPath(),
@@ -50,7 +51,7 @@ void EdServer::slot_openProject()
     this->openNovelDatabase(info.path());
 }
 
-void EdServer::slot_closeProject()
+void EdServer::closeProject()
 {
     delete this->pjtSymbo;
     this->pjtSymbo = nullptr;
@@ -61,22 +62,23 @@ void EdServer::slot_closeProject()
     this->mainView->addDocumentView("", nullptr);
 }
 
-void EdServer::slot_saveAll()
+void EdServer::saveAll()
 {
     if(this->pjtSymbo)
         this->pjtSymbo->saveProject();
 }
 
-void EdServer::slot_openItem(const QModelIndex &index)
+void EdServer::openItem(const QModelIndex &index)
 {
     QTextEdit *edit = nullptr;
     QString title;
 
     this->pjtSymbo->openDocument(index, title, &edit);
+    this->highter->setDocument(edit->document());
     this->mainView->addDocumentView(title, edit);
 }
 
-void EdServer::slot_closeTargetView(QTextEdit *view)
+void EdServer::closeTargetView(QTextEdit *view)
 {
     auto index = this->pjtSymbo->getIndexofDocumentView(view);
     this->pjtSymbo->closeDocument(index);
@@ -84,7 +86,7 @@ void EdServer::slot_closeTargetView(QTextEdit *view)
     this->mainView->addDocumentView("", nullptr);
 }
 
-void EdServer::slot_newFileNode(const QModelIndex &index)
+void EdServer::newFileNode(const QModelIndex &index)
 {
     if(!index.isValid())
         return;
@@ -98,7 +100,7 @@ void EdServer::slot_newFileNode(const QModelIndex &index)
     }
 }
 
-void EdServer::slot_newGroupNode(const QModelIndex &index)
+void EdServer::newGroupNode(const QModelIndex &index)
 {
     if(!index.isValid())
         return;
@@ -112,7 +114,7 @@ void EdServer::slot_newGroupNode(const QModelIndex &index)
     }
 }
 
-void EdServer::slot_removeNode(const QModelIndex &index)
+void EdServer::removeNode(const QModelIndex &index)
 {
     if(!index.isValid())
         return;
@@ -120,12 +122,17 @@ void EdServer::slot_removeNode(const QModelIndex &index)
     this->pjtSymbo->removeNode(index);
 }
 
-void EdServer::slot_NodeMove(const QModelIndex &from, const QModelIndex &to)
+void EdServer::nodeMove(const QModelIndex &from, const QModelIndex &to)
 {
     this->pjtSymbo->moveNodeTo(from, to);
 }
 
-void EdServer::slot_ResponseToolsAct(QAction *act)
+void EdServer::keywordsFocuse(qlonglong keywords)
+{
+    qDebug() << keywords;
+}
+
+void EdServer::responseToolsSet(QAction *act)
 {
     auto text = act->text();
     if(text == tr("等级编辑")){
@@ -163,14 +170,16 @@ EdServer::EdServer(QString title):
     mainView(new FrontEnd),
     pjtSymbo(nullptr),
     toolsBar(new QToolBar(this->mainView)),
-    queryUtility(new Component::QueryUtility(this->mainView))
+    queryUtility(new Component::QueryUtility(this->mainView)),
+    highter(new Support::SyntaxHighlighter(this))
 {
     this->mainView->setWindowTitle(title);
     this->mainView->addToolBar(this->toolsBar);
-
     this->mainView->setQueryUtility(this->queryUtility);
-
     this->queryUtility->hide();
+
+    this->connect(this->highter,    &Support::SyntaxHighlighter::discoveryKeywords,
+                  this,             &EdServer::keywordsFocuse);
 }
 
 EdServer::~EdServer()
@@ -185,26 +194,28 @@ void EdServer::openNovelDatabase(QString pjtPath)
     QDir::setCurrent(pjtPath);
     this->dbTool = new Support::DBInitTool;
 
-    this->refreshUIStatus();
     this->mainView->setProjectTree(this->pjtSymbo->getStructure());
 
     this->connect(this->mainView,   &FrontEnd::signal_openProjectItem,
-                  this,             &EdServer::slot_openItem);
+                  this,             &EdServer::openItem);
     this->connect(this->mainView,   &FrontEnd::signal_closeTargetView,
-                  this,             &EdServer::slot_closeTargetView);
+                  this,             &EdServer::closeTargetView);
     this->connect(this->mainView,   &FrontEnd::signal_newFile,
-                  this,             &EdServer::slot_newFileNode);
+                  this,             &EdServer::newFileNode);
     this->connect(this->mainView,   &FrontEnd::signal_newGroup,
-                  this,             &EdServer::slot_newGroupNode);
+                  this,             &EdServer::newGroupNode);
     this->connect(this->mainView,   &FrontEnd::signal_removeNode,
-                  this,             &EdServer::slot_removeNode);
+                  this,             &EdServer::removeNode);
     this->connect(this->mainView,   &FrontEnd::signal_moveNode,
-                  this,             &EdServer::slot_NodeMove);
+                  this,             &EdServer::nodeMove);
 
     this->connect(this->pjtSymbo,   &Support::ProjectSymbo::signal_nodeModified,
-                  this,             &EdServer::slot_openItem);
+                  this,             &EdServer::openItem);
 
     this->queryUtility->setVisible(true);
+
+    this->refreshUIStatus();
+    this->refreshDataStatus();
 }
 
 void EdServer::refreshUIStatus()
@@ -216,17 +227,17 @@ void EdServer::refreshUIStatus()
     mbar->addMenu(m_file);
     auto m_newf = new QAction(tr("打开项目"), m_file);
     m_file->addAction(m_newf);
-    this->connect(m_newf,   &QAction::triggered, this,  &EdServer::slot_openProject);
+    this->connect(m_newf,   &QAction::triggered, this,  &EdServer::openProject);
     auto m_opnf = new QAction(tr("新建项目"), m_file);
-    this->connect(m_opnf,   &QAction::triggered, this,  &EdServer::slot_newProject);
+    this->connect(m_opnf,   &QAction::triggered, this,  &EdServer::newProject);
     m_file->addAction(m_opnf);
     auto m_save = new QAction(tr("保存所有"),m_file);
-    this->connect(m_save,   &QAction::triggered, this,  &EdServer::slot_saveAll);
+    this->connect(m_save,   &QAction::triggered, this,  &EdServer::saveAll);
     m_file->addAction(m_save);
     m_file->addSeparator();
     auto m_clsp = new QAction(tr("关闭项目"), m_file);
     m_file->addAction(m_clsp);
-    this->connect(m_clsp,   &QAction::triggered, this,  &EdServer::slot_closeProject);
+    this->connect(m_clsp,   &QAction::triggered, this,  &EdServer::closeProject);
     m_file->addSeparator();
     QAction* _exit = new QAction(tr("退出"), m_file);
     this->connect(_exit,    &QAction::triggered, this,  &EdServer::exit);
@@ -257,12 +268,22 @@ void EdServer::refreshUIStatus()
         auto ev_nodeE = new QAction(tr("事件编辑"), _tools);
         _tools->addAction(ev_nodeE);
         this->connect(_tools, &QMenu::triggered,
-                      this,   &EdServer::slot_ResponseToolsAct);
+                      this,   &EdServer::responseToolsSet);
     }
     this->mainView->setMenuBar(mbar);
     delete temp;
     this->mainView->setHidden(true);
     this->mainView->setHidden(false);
+}
+
+void EdServer::refreshDataStatus()
+{
+    auto types = this->highter->getTypes();
+    foreach(auto type, types){
+        this->highter->clear(type);
+    }
+
+    //add types keywords========================
 }
 
 void EdServer::openGraphicsModel()

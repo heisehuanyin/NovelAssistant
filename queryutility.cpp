@@ -1,13 +1,22 @@
 #include "queryutility.h"
 
+#include <QVBoxLayout>
+
 using namespace Component;
 
 QueryUtility::QueryUtility(QWidget *parent):
-    QTabWidget (parent),
+    QWidget (parent),
+    anchor(new QComboBox(this)),
+    quickTab(new QTabWidget(this)),
     quickLook(new QTableView(this))
 {
-    this->addTab(this->quickLook, tr("同步简略"));
+    auto grid(new QVBoxLayout(this));
+    this->setLayout(grid);
 
+    grid->addWidget(this->quickTab);
+    this->quickTab->addTab(this->quickLook, tr("同步简略"));
+
+    grid->addWidget(this->anchor);
 }
 
 QueryUtility::~QueryUtility()

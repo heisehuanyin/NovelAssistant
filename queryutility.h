@@ -8,7 +8,7 @@
 namespace Component {
 
 
-class QueryUtility: public QTabWidget
+class QueryUtility: public QWidget
 {
     Q_OBJECT
 public:
@@ -21,7 +21,12 @@ public slots:
     void resetEventNode(qlonglong evnode);
 
 private:
-    QTableView *const quickLook;
+    QComboBox*const anchor;//锚定设施
+
+    QTabWidget*const quickTab;//快速信息面板
+    QTableView *const quickLook;//快速信息清单
+
+
 };
 
 

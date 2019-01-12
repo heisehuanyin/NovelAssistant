@@ -142,7 +142,7 @@ void ProjectSymbo::openDocument(const QModelIndex &index, QString &title, QTextE
     auto xitem = dynamic_cast<__projectsymbo::FileSymbo*>(item);
 
     title = xitem->text();
-    this->list.insert(index, title);
+    this->list.insert(index, xitem->getRefPath());
     this->DocManager::openDocument(xitem->getRefPath(),view);
 }
 
