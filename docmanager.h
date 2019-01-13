@@ -2,6 +2,7 @@
 #define DOCMANAGER_H
 
 #include <QString>
+#include <QSyntaxHighlighter>
 #include <QTextEdit>
 
 namespace Support {

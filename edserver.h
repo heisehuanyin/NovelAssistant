@@ -112,7 +112,7 @@ private slots:
      * @brief 聚焦关键词
      * @param keywords 关键词id
      */
-    void keywordsFocuse(qlonglong keywords, QString);
+    void keywordsFocuse(qlonglong keywords, QString&);
 
 
     /**

@@ -129,7 +129,7 @@ void EdServer::nodeMove(const QModelIndex &from, const QModelIndex &to)
     this->pjtSymbo->moveNodeTo(from, to);
 }
 
-void EdServer::keywordsFocuse(qlonglong keywords, QString type)
+void EdServer::keywordsFocuse(qlonglong keywords, QString &type)
 {
     qDebug() << keywords << type;
 }
