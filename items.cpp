@@ -300,6 +300,7 @@ void Items::slot_responseApply()
     q.bindValue(":mark", this->level->currentData());
     q.bindValue(":number", this->value->text().toLongLong());
     q.bindValue(":desc", this->descBlock->toPlainText());
+    q.bindValue(":id", id);
 
     if(!q.exec())
         qDebug() << q.lastError();

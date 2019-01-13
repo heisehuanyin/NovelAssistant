@@ -1,4 +1,5 @@
 #include "projectsymbo.h"
+#include "syntaxhightlighter.h"
 
 #include <QFile>
 #include <QFileInfo>
@@ -44,7 +45,7 @@ __projectsymbo::GroupSymbo::~GroupSymbo()
 }
 
 ProjectSymbo::ProjectSymbo(QObject *parent):
-    QObject (parent),
+    __projectsymbo::DocManager (new __syntaxhighlighter::DataSource, parent),
     structure(new QStandardItemModel),
     domData(new QDomDocument)
 {
@@ -106,6 +107,11 @@ void ProjectSymbo::setConfig(QString key, QString value)
     item.setAttribute("value", value);
 
     setting.appendChild(item);
+}
+
+void ProjectSymbo::refreshHighlighterDataSource()
+{
+    this->getDataSource().refreshKeywordsSet();
 }
 
 int ProjectSymbo::openProject(QString filePath)

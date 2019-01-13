@@ -1,4 +1,5 @@
 #include "docmanager.h"
+#include "syntaxhightlighter.h"
 
 #include <QFileInfo>
 #include <QTextStream>
@@ -6,13 +7,32 @@
 
 using namespace Support::__projectsymbo;
 
-DocManager::DocManager()
+void DocManager::keywordsFocused(qlonglong item, const QString &type)
+{
+    emit this->discoveryKeywords(item, type);
+}
+
+DocManager::DocManager(__syntaxhighlighter::DataSource *dataSource, QObject *parent):
+    QObject (parent),
+    dataSource(dataSource)
 {
 
 }
 
 DocManager::~DocManager()
 {
+    auto lighters = this->lighters.keys();
+    auto views = this->docCon.keys();
+
+    foreach (auto view, views) {
+        auto item = this->docCon.value(view);
+        delete item;
+    }
+    foreach (auto lighter, lighters) {
+        auto item = this->lighters.value(lighter);
+        delete item;
+    }
+    delete this->dataSource;
 }
 
 int DocManager::openDocument(QString filePath, QTextEdit **view)
@@ -29,12 +49,19 @@ int DocManager::openDocument(QString filePath, QTextEdit **view)
         file.close();
     }
 
+    if(!file.open(QIODevice::ReadOnly | QIODevice::Text))
+        return -1;
+
+
     auto v = new QTextEdit;
     this->docCon.insert(filePath, v);
     *view = v;
 
-    if(!file.open(QIODevice::ReadOnly | QIODevice::Text))
-        return -1;
+    auto lighter = new SyntaxHighlighter(this->dataSource, this);
+    lighter->setDocument(v->document());
+    this->lighters.insert(filePath, lighter);
+    QObject::connect(lighter,   &SyntaxHighlighter::discoveryKeywords,
+                     this,      &DocManager::keywordsFocused);
 
     QTextStream in(&file);
     while (!in.atEnd()) {
@@ -42,6 +69,7 @@ int DocManager::openDocument(QString filePath, QTextEdit **view)
         v->append(line);
     }
     file.close();
+
     return 0;
 }
 
@@ -78,6 +106,11 @@ int DocManager::saveAllActived()
     return 0;
 }
 
+Support::__syntaxhighlighter::DataSource &DocManager::getDataSource()
+{
+    return *this->dataSource;
+}
+
 QList<QString> DocManager::getActiveDocs()
 {
     return this->docCon.keys();
@@ -95,6 +128,11 @@ int DocManager::closeDocumentWithoutSave(QString filePath)
 
     auto view = this->docCon.take(filePath);
     delete view;
+    auto lighter = this->lighters.take(filePath);
+    QObject::disconnect(lighter,    &SyntaxHighlighter::discoveryKeywords,
+                        this,       &DocManager::keywordsFocused);
+    delete lighter;
+
     return 0;
 }
 

@@ -32,7 +32,7 @@ void EdServer::newProject()
         file.open(QIODevice::WriteOnly);
         file.close();
     }
-    this->pjtSymbo = new Support::ProjectSymbo;
+    this->pjtSymbo = new Support::ProjectSymbo(this);
     this->pjtSymbo->saveProject(info.filePath());
 
     this->openNovelDatabase(info.path());
@@ -47,7 +47,7 @@ void EdServer::openProject()
         return;
 
     QFileInfo info(fileName);
-    this->pjtSymbo = new Support::ProjectSymbo;
+    this->pjtSymbo = new Support::ProjectSymbo(this);
     this->pjtSymbo->openProject(info.filePath());
 
     this->openNovelDatabase(info.path());
@@ -76,7 +76,6 @@ void EdServer::openItem(const QModelIndex &index)
     QString title;
 
     this->pjtSymbo->openDocument(index, title, &edit);
-    this->highter->setDocument(edit->document());
     this->mainView->addDocumentView(title, edit);
 }
 
@@ -140,6 +139,7 @@ void EdServer::responseToolsSet(QAction *act)
     if(text == tr("等级编辑")){
         Editor::TypeKindGrade x(this->mainView);
         x.exec();
+        return;
     }
     if(text == tr("道具编辑")){
         Editor::Items x(this->mainView);
@@ -161,6 +161,8 @@ void EdServer::responseToolsSet(QAction *act)
         Editor::EventNodes x(this->mainView);
         x.exec();
     }
+    if(this->pjtSymbo)
+        this->pjtSymbo->refreshHighlighterDataSource();
 }
 
 void EdServer::exit()
@@ -171,17 +173,13 @@ void EdServer::exit()
 EdServer::EdServer(QString title):
     mainView(new FrontEnd),
     pjtSymbo(nullptr),
-    toolsBar(new QToolBar(this->mainView)),
-    queryUtility(new Component::QueryUtility(this->mainView)),
-    highter(new Support::SyntaxHighlighter(this))
+    //toolsBar(new QToolBar(this->mainView)),
+    queryUtility(new Component::QueryUtility(this->mainView))
 {
     this->mainView->setWindowTitle(title);
-    this->mainView->addToolBar(this->toolsBar);
+    //this->mainView->addToolBar(this->toolsBar);
     this->mainView->setQueryUtility(this->queryUtility);
     this->queryUtility->hide();
-
-    this->connect(this->highter,    &Support::SyntaxHighlighter::discoveryKeywords,
-                  this,             &EdServer::keywordsFocuse);
 }
 
 EdServer::~EdServer()
@@ -195,7 +193,6 @@ void EdServer::openNovelDatabase(QString pjtPath)
 {
     QDir::setCurrent(pjtPath);
     this->dbTool = new Support::DBInitTool;
-
     this->mainView->setProjectTree(this->pjtSymbo->getStructure());
 
     this->connect(this->mainView,   &FrontEnd::signal_openProjectItem,
@@ -280,73 +277,8 @@ void EdServer::refreshUIStatus()
 
 void EdServer::refreshDataStatus()
 {
-    auto types = this->highter->getTypes();
-    foreach(auto type, types){
-        this->highter->clear(type);
-    }
-
-    //add types keywords========================
-    QSqlQuery q;
-    if(!q.exec("select char_id,"
-               "name "
-               "from table_characterbasic ;"))
-    {
-        qDebug() << q.lastError();
-        return;
-    }
-    while (q.next()) {
-        this->highter->addKeywords("table_characterbasic",
-                                   q.value(1).toString(),
-                                   q.value(0).toLongLong());
-    }
-    if(!q.exec("select ev_node_id, "
-               "event_name "
-               "from table_eventnodebasic;"))
-    {
-        qDebug() << q.lastError();
-        return;
-    }
-    while (q.next()) {
-        this->highter->addKeywords("table_eventnodebasic",
-                                   q.value(1).toString(),
-                                   q.value(0).toLongLong());
-    }
-    if(!q.exec("select location_id, "
-               "location_name "
-               "from table_locationlist;"))
-    {
-        qDebug() << q.lastError();
-        return;
-    }
-    while (q.next()) {
-        this->highter->addKeywords("table_locationlist",
-                                   q.value(1).toString(),
-                                   q.value(0).toLongLong());
-    }
-    if(!q.exec("select prop_id, "
-               "name "
-               "from table_propbasic;"))
-    {
-        qDebug() << q.lastError();
-        return;
-    }
-    while (q.next()) {
-        this->highter->addKeywords("table_propbasic",
-                                   q.value(1).toString(),
-                                   q.value(0).toLongLong());
-    }
-    if(!q.exec("select skill_id, "
-               "name "
-               "from table_skilllist;"))
-    {
-        qDebug() << q.lastError();
-        return;
-    }
-    while (q.next()) {
-        this->highter->addKeywords("table_skilllist",
-                                   q.value(1).toString(),
-                                   q.value(0).toLongLong());
-    }
+    if(this->pjtSymbo)
+        this->pjtSymbo->refreshHighlighterDataSource();
 }
 
 void EdServer::openGraphicsModel()

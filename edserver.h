@@ -41,9 +41,8 @@ private:
     FrontEnd *const mainView;
     Support::ProjectSymbo* pjtSymbo;
     Support::DBInitTool *dbTool;
-    QToolBar * const toolsBar;
+    //QToolBar * const toolsBar;
     Component::QueryUtility *const queryUtility;
-    Support::SyntaxHighlighter *const highter;
 
     /**
      * @brief 打开小说数据库

@@ -31,7 +31,7 @@ namespace __projectsymbo {
 /**
  * @brief 本类型用于代表项目本身，针对项目进行的操作都转化为对本类型示例的操作
  */
-class ProjectSymbo : public QObject, private __projectsymbo::DocManager
+class ProjectSymbo : public __projectsymbo::DocManager
 {
     Q_OBJECT
 
@@ -59,6 +59,10 @@ public:
      * @param value 配置值
      */
     void setConfig(QString key, QString value);
+    /**
+     * @brief 刷新语法高亮数据源
+     */
+    void refreshHighlighterDataSource();
 
 
 
