@@ -54,7 +54,7 @@ namespace Support {
         void setGlobalFontSize(int weight);
 
     signals:
-        void discoveryKeywords(qlonglong item);
+        void discoveryKeywords(qlonglong item, QString &type);
 
     private:
         //      type         format        items

@@ -86,7 +86,7 @@ void SyntaxHighlighter::highlightBlock(const QString &text)
         foreach (auto keyword, *kwList->second) {
             int index = text.indexOf(keyword.first);
             if(index >=0)
-                emit this->discoveryKeywords(keyword.second);
+                emit this->discoveryKeywords(keyword.second, type);
 
             while (index >= 0) {
                 int length = keyword.first.length();

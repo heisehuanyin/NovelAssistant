@@ -15,6 +15,8 @@
 #include <QApplication>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QSqlQuery>
+#include <QSqlError>
 
 void EdServer::newProject()
 {
@@ -127,9 +129,9 @@ void EdServer::nodeMove(const QModelIndex &from, const QModelIndex &to)
     this->pjtSymbo->moveNodeTo(from, to);
 }
 
-void EdServer::keywordsFocuse(qlonglong keywords)
+void EdServer::keywordsFocuse(qlonglong keywords, QString type)
 {
-    qDebug() << keywords;
+    qDebug() << keywords << type;
 }
 
 void EdServer::responseToolsSet(QAction *act)
@@ -284,6 +286,67 @@ void EdServer::refreshDataStatus()
     }
 
     //add types keywords========================
+    QSqlQuery q;
+    if(!q.exec("select char_id,"
+               "name "
+               "from table_characterbasic ;"))
+    {
+        qDebug() << q.lastError();
+        return;
+    }
+    while (q.next()) {
+        this->highter->addKeywords("table_characterbasic",
+                                   q.value(1).toString(),
+                                   q.value(0).toLongLong());
+    }
+    if(!q.exec("select ev_node_id, "
+               "event_name "
+               "from table_eventnodebasic;"))
+    {
+        qDebug() << q.lastError();
+        return;
+    }
+    while (q.next()) {
+        this->highter->addKeywords("table_eventnodebasic",
+                                   q.value(1).toString(),
+                                   q.value(0).toLongLong());
+    }
+    if(!q.exec("select location_id, "
+               "location_name "
+               "from table_locationlist;"))
+    {
+        qDebug() << q.lastError();
+        return;
+    }
+    while (q.next()) {
+        this->highter->addKeywords("table_locationlist",
+                                   q.value(1).toString(),
+                                   q.value(0).toLongLong());
+    }
+    if(!q.exec("select prop_id, "
+               "name "
+               "from table_propbasic;"))
+    {
+        qDebug() << q.lastError();
+        return;
+    }
+    while (q.next()) {
+        this->highter->addKeywords("table_propbasic",
+                                   q.value(1).toString(),
+                                   q.value(0).toLongLong());
+    }
+    if(!q.exec("select skill_id, "
+               "name "
+               "from table_skilllist;"))
+    {
+        qDebug() << q.lastError();
+        return;
+    }
+    while (q.next()) {
+        this->highter->addKeywords("table_skilllist",
+                                   q.value(1).toString(),
+                                   q.value(0).toLongLong());
+    }
 }
 
 void EdServer::openGraphicsModel()
