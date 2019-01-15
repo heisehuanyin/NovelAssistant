@@ -39,6 +39,7 @@ FrontEnd::FrontEnd(QWidget *parent)
     this->baseFrame->setStretchFactor(2,0);
 
     this->contentStack->addTab(this->welcome, "Welcome");
+    //setUnifiedTitleAndToolBarOnMac(true);
 }
 
 FrontEnd::~FrontEnd()

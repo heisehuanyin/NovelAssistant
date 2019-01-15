@@ -158,8 +158,26 @@ void QueryUtility::resetBaseEvent(qlonglong ev_node)
 void QueryUtility::refreshEventMap()
 {
     //this->ev_node:事件节点id
+    auto locid = this->place1->currentData();
+    
     QSqlQuery q;
-
+    q.exec()
+    
+    
+    
+    q.prepare("select "
+              "'角色', "
+              "tcb.name, "
+              "tenb.event_name, "
+              "tenb.node_name, "
+              "tclt.char_desc "
+              "from table_characterlifetracker tclt "
+              "inner join table_eventnodebasic tenb on tclt.event_id = tenb.ev_node_id "
+              "inner join table_characterbasic tcb on tclt.char_id = tcb.char_id "
+              "where (tclt.location_id = :id) and (tenb.begin_time < :time) "
+              "order by tenb.begin_time desc");
+    q.bindValue(":id",locid);
+    q.bindValue(":time", )
 }
 
 void QueryUtility::refreshCharacter__About()

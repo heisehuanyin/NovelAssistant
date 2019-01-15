@@ -12,9 +12,9 @@ void DocManager::keywordsFocused(qlonglong item, const QString &type)
     emit this->discoveryKeywords(item, type);
 }
 
-DocManager::DocManager(__syntaxhighlighter::DataSource *dataSource, QObject *parent):
+DocManager::DocManager(QObject *parent):
     QObject (parent),
-    dataSource(dataSource)
+    dataSource(new __syntaxhighlighter::DataSource)
 {
 
 }

@@ -35,7 +35,7 @@ namespace Support {
             /**
              * @brief 构建新的文档管理器
              */
-            explicit DocManager(__syntaxhighlighter::DataSource* dataSource, QObject* parent=nullptr);
+            explicit DocManager(QObject* parent=nullptr);
             virtual ~DocManager();
 
             /**

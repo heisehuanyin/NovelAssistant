@@ -45,7 +45,7 @@ __projectsymbo::GroupSymbo::~GroupSymbo()
 }
 
 ProjectSymbo::ProjectSymbo(QObject *parent):
-    __projectsymbo::DocManager (new __syntaxhighlighter::DataSource, parent),
+    __projectsymbo::DocManager (parent),
     structure(new QStandardItemModel),
     domData(new QDomDocument)
 {

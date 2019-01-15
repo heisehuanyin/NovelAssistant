@@ -7,6 +7,7 @@
 #include <QStandardItemModel>
 #include <QTextEdit>
 #include <QToolBar>
+#include <QComboBox>
 
 class FrontEnd;
 
@@ -41,8 +42,9 @@ private:
     FrontEnd *const mainView;
     Support::ProjectSymbo* pjtSymbo;
     Support::DBInitTool *dbTool;
-    //QToolBar * const toolsBar;
+    QToolBar * const toolsBar;
     Component::QueryUtility *const queryUtility;
+    QComboBox*const anchor;
 
     /**
      * @brief 打开小说数据库
@@ -50,7 +52,7 @@ private:
      */
     void openNovelDatabase(QString pjtPath);
     /**
-     * @brief 当组件状态发生变化时候，刷新ui组件状态，主要用于更新菜单栏
+     * @brief 当组件状态发生变化时候，刷新ui组件状态，主要用于更新菜单栏,工具栏
      * @attention menubar
      */
     void refreshUIStatus();
@@ -111,7 +113,8 @@ private slots:
      * @brief 聚焦关键词
      * @param keywords 关键词id
      */
-    void keywordsFocuse(qlonglong keywords, QString&);
+    void keywordsFocuse(qlonglong keywords,const QString&);
+    void baseEventChanged(int index);
 
 
     /**
