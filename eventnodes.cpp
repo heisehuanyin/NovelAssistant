@@ -12,14 +12,14 @@ using namespace Editor;
 
 EventNodes::EventNodes(QWidget *parent):
     QDialog(parent),
-    input(new QLineEdit),
+    eventNameInput(new QLineEdit),
     addItem(new QPushButton(tr("添加阶段"))),
     removeItem(new QPushButton(tr("删除阶段"))),
     apply(new QPushButton(tr("应用变更"))),
     eventTable(new QTableView),
     eventModel(new Support::HideIdModel(this)),
     tabCon(new QTabWidget),
-    evNameInput(new QLineEdit),
+    evtNodeNameInput(new QLineEdit),
     birthDay(new QPushButton(tr("xxxxx年xx月xx日"))),
     deathDay(new QPushButton(tr("xxxxx年xx月xx日"))),
     beginStatus(new Support::SuperDateTool(this)),
@@ -29,27 +29,25 @@ EventNodes::EventNodes(QWidget *parent):
     localTable(new QTableView),
     locals_Model(new QStandardItemModel(this)),
     addLocation(new QPushButton(tr("添加地点"))),
-    removeLocation(new QPushButton(tr("移除地点"))),
-    socialDesc(new QTextEdit),
-    physicalDesc(new QTextEdit)
+    removeLocation(new QPushButton(tr("移除地点")))
 {
-    auto bLayout(new QGridLayout);
-    this->setLayout(bLayout);
+    auto baseLayout(new QGridLayout);
+    this->setLayout(baseLayout);
 
-    bLayout->addWidget(this->input, 0, 0, 1, 4);
-    this->connect(this->input, &QLineEdit::textChanged,
+    baseLayout->addWidget(this->eventNameInput, 0, 0, 1, 4);
+    this->connect(this->eventNameInput, &QLineEdit::textChanged,
                   this,        &EventNodes::slot_queryEventNode);
-    bLayout->addWidget(this->addItem, 0, 4);
+    baseLayout->addWidget(this->addItem, 0, 4);
     this->connect(this->addItem, &QPushButton::clicked,
                   this,          &EventNodes::slot_respond2Additem);
-    bLayout->addWidget(this->removeItem, 0, 5);
+    baseLayout->addWidget(this->removeItem, 0, 5);
     this->connect(this->removeItem, &QPushButton::clicked,
                   this,             &EventNodes::slot_respond2Removeitem);
-    bLayout->addWidget(this->apply, 0, 8);
+    baseLayout->addWidget(this->apply, 0, 8);
     this->connect(this->apply,  &QPushButton::clicked,
                   this,         &EventNodes::slot_4Apply);
 
-    bLayout->addWidget(eventTable, 1, 0, 10, 4);
+    baseLayout->addWidget(eventTable, 1, 0, 10, 4);
     this->eventTable->setModel(this->eventModel);
     this->eventTable->setSelectionMode(QAbstractItemView::SingleSelection);
     this->eventTable->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -57,27 +55,25 @@ EventNodes::EventNodes(QWidget *parent):
     this->connect(model,&QItemSelectionModel::selectionChanged,
                   this, &EventNodes::slot_targetItemChanged);
 
+    baseLayout->addWidget(this->tabCon, 1, 4, 10, 5);
 
+    //基本信息面板
+    auto panel1 = new QWidget(this);
+    this->tabCon->addTab(panel1, "基本信息");
+    auto layout1(new QGridLayout);
+    panel1->setLayout(layout1);
+    layout1->setRowMinimumHeight(0, 20);
+    layout1->setRowStretch(0,0);
+    layout1->setRowMinimumHeight(1, 20);
+    layout1->setRowStretch(1,0);
+    layout1->setRowMinimumHeight(2, 20);
+    layout1->setRowStretch(2,0);
+    layout1->setRowMinimumHeight(3, 20);
+    layout1->setRowStretch(3,0);
 
-
-    bLayout->addWidget(this->tabCon, 1, 4, 10, 5);
-
-    auto panel_1 = new QWidget(this);
-    this->tabCon->addTab(panel_1, "基本信息");
-    auto panel_1_layout(new QGridLayout);
-    panel_1->setLayout(panel_1_layout);
-    panel_1_layout->setRowMinimumHeight(0, 20);
-    panel_1_layout->setRowStretch(0,0);
-    panel_1_layout->setRowMinimumHeight(1, 20);
-    panel_1_layout->setRowStretch(1,0);
-    panel_1_layout->setRowMinimumHeight(2, 20);
-    panel_1_layout->setRowStretch(2,0);
-    panel_1_layout->setRowMinimumHeight(3, 20);
-    panel_1_layout->setRowStretch(3,0);
-
-    panel_1_layout->addWidget(new QLabel(tr("名称：")));
-    panel_1_layout->addWidget(this->evNameInput, 0, 1, 1, 2);
-    this->connect(this->evNameInput,    &QLineEdit::textChanged,
+    layout1->addWidget(new QLabel(tr("名称：")));
+    layout1->addWidget(this->evtNodeNameInput, 0, 1, 1, 2);
+    this->connect(this->evtNodeNameInput,    &QLineEdit::textChanged,
                   this,                 &EventNodes::slot_stateChanged);
 
     auto time(new QGroupBox(tr("始末时间")));
@@ -91,13 +87,13 @@ EventNodes::EventNodes(QWidget *parent):
     this->connect(this->deathDay, &QPushButton::clicked,
                   this,           &EventNodes::slot_editEndTime);
     inb->addWidget(new QLabel(tr("末于：")), 1, 0);
-    panel_1_layout->addWidget(time, 1, 0, 3, 3);
+    layout1->addWidget(time, 1, 0, 3, 3);
 
     auto comments(new QGroupBox(tr("事件备注")));
     auto __layout(new QHBoxLayout);
     comments->setLayout(__layout);
     __layout->addWidget(this->evNodeComment);
-    panel_1_layout->addWidget(comments, 0, 3, 4, 2);
+    layout1->addWidget(comments, 0, 3, 4, 2);
     this->connect(this->evNodeComment,  &QTextEdit::textChanged,
                   this,                 &EventNodes::slot_stateChanged);
 
@@ -105,29 +101,26 @@ EventNodes::EventNodes(QWidget *parent):
     auto _layout(new QGridLayout);
     evndesc->setLayout(_layout);
     _layout->addWidget(this->evNodeDesc);
-    panel_1_layout->addWidget(evndesc, 4, 0, 4, 5);
+    layout1->addWidget(evndesc, 4, 0, 4, 5);
     this->connect(this->evNodeDesc, &QTextEdit::textChanged,
                   this,             &EventNodes::slot_stateChanged);
 
 
-    auto panel_2 = new QWidget(this);
-    this->tabCon->addTab(panel_2, "地域性影响");
-    auto panel_2_layout(new QGridLayout);
-    panel_2->setLayout(panel_2_layout);
+    //地域性影响面板
+    auto panel2 = new QWidget(this);
+    this->tabCon->addTab(panel2, "地域性影响");
+    auto layout2(new QGridLayout);
+    panel2->setLayout(layout2);
 
-    panel_2_layout->addWidget(this->localTable, 0, 0, 9, 3);
+    layout2->addWidget(this->localTable,0,0,9,4);
     this->localTable->setModel(this->locals_Model);
-    auto smodel = this->localTable->selectionModel();
-    this->connect(smodel,   &QItemSelectionModel::currentRowChanged,
-                  this,     &EventNodes::slot_TargetLocationChanged);
-    panel_2_layout->addWidget(new QLabel(tr("人文描述")), 0, 3, 1, 2);
-    panel_2_layout->addWidget(this->socialDesc, 1, 3, 4, 2);
-    panel_2_layout->addWidget(new QLabel(tr("地貌描述")), 5, 3, 1, 2);
-    panel_2_layout->addWidget(this->physicalDesc, 6, 3, 4, 2);
-    panel_2_layout->addWidget(this->addLocation, 9, 0);
+    this->connect(this->locals_Model,   &QStandardItemModel::itemChanged,
+                  this,                 &EventNodes::slot_ItemChanged);
+
+    layout2->addWidget(this->addLocation, 9, 0);
     this->connect(this->addLocation,    &QPushButton::clicked,
                   this,                 &EventNodes::slot_Respond2LocationAdd);
-    panel_2_layout->addWidget(this->removeLocation, 9, 1);
+    layout2->addWidget(this->removeLocation, 9, 1);
     this->connect(this->removeLocation, &QPushButton::clicked,
                   this,                 &EventNodes::slot_Respond2LocationRemove);
 
@@ -186,7 +179,7 @@ void EventNodes::slot_respond2Additem()
 {
     QString eName;
     if(this->eventModel->rowCount(QModelIndex()) == 0){
-        eName = this->input->text();
+        eName = this->eventNameInput->text();
     }else{
         auto index = this->eventTable->currentIndex();
         if(!index.isValid())
@@ -209,8 +202,8 @@ void EventNodes::slot_respond2Additem()
     if(!q.exec()){
         qDebug() << q.lastError();
     }
-    this->input->setText("");
-    this->input->setText(eName);
+    this->eventNameInput->setText("");
+    this->eventNameInput->setText(eName);
 }
 
 void EventNodes::slot_respond2Removeitem()
@@ -228,8 +221,8 @@ void EventNodes::slot_respond2Removeitem()
     if(!q.exec())
         qDebug() << q.lastError();
     auto name = this->eventModel->data(index.sibling(index.row(), 0), Qt::DisplayRole);
-    this->input->setText("");
-    this->input->setText(name.toString());
+    this->eventNameInput->setText("");
+    this->eventNameInput->setText(name.toString());
 
     this->removeItem->setEnabled(false);
 }
@@ -240,6 +233,7 @@ void EventNodes::slot_targetItemChanged(const QItemSelection &, const QItemSelec
     if(!index.isValid())
         return;
     auto evtid = this->eventModel->oppositeID(index);
+    this->focusedID = evtid;
 
     this->addItem->setEnabled(true);
     this->removeItem->setEnabled(true);
@@ -261,10 +255,11 @@ void EventNodes::slot_targetItemChanged(const QItemSelection &, const QItemSelec
     }
     if(!q.next())
         return;
+    auto maxtime = q.value(1);
 
     this->evNodeDesc->setText(q.value(2).toString());
     this->beginStatus->resetDate(q.value(0).toLongLong());
-    this->evNameInput->setText(q.value(3).toString());
+    this->evtNodeNameInput->setText(q.value(3).toString());
     auto str1 = beginStatus->toString();
     this->birthDay->setText(str1);
     this->endStatus->resetDate(q.value(1).toLongLong());
@@ -280,12 +275,16 @@ void EventNodes::slot_targetItemChanged(const QItemSelection &, const QItemSelec
     q.prepare("select "
               "tll.corrdinate_suffix, "
               "tll.location_name, "
-              "tll.story, "
+              "tlc.location_desc, "
+              "tlc.social_desc, "
               "tll.location_id "
               "from table_locationchange tlc "
               "inner join table_locationlist tll on tlc.location = tll.location_id "
-              "where tlc.event_node = :enode;");
-    q.bindValue(":enode", evtid);
+              "inner join table_eventnodebasic tenb on tenb.ev_node_id = tlc.event_node "
+              "where tenb.end_time <= :end "
+              "group by tlc.location "
+              "having tenb.end_time = max(tenb.end_time);");
+    q.bindValue(":end", maxtime);
     if(!q.exec()){
         qDebug() << q.lastError();
         return;
@@ -295,15 +294,17 @@ void EventNodes::slot_targetItemChanged(const QItemSelection &, const QItemSelec
     this->local_List_ids.clear();
     while (q.next()) {
         QList<QStandardItem*> row;
-        for(int i=0; i<3; ++i){
+        for(int i=0; i<4; ++i){
             auto item(new QStandardItem(q.value(i).toString()));
             row.append(item);
+            if(i<2)
+                item->setEditable(false);
         }
         this->locals_Model->appendRow(row);
-        this->local_List_ids.append(q.value(3));
+        this->local_List_ids.append(q.value(4));
     }
     QStringList headers;
-    headers <<"前缀" <<"名称" <<"历史渊源";
+    headers <<"前缀" <<"名称" <<"人文表述"<<"地貌表述";
     this->locals_Model->setHorizontalHeaderLabels(headers);
 }
 
@@ -338,12 +339,9 @@ void EventNodes::slot_stateChanged()
 
 void EventNodes::slot_4Apply()
 {
-    auto index = this->eventTable->currentIndex();
-    if(!index.isValid())
-        return;
-    auto id = this->eventModel->oppositeID(index);
+    auto id = this->focusedID;
 
-    auto nodeName = this->evNameInput->text();
+    auto nodeName = this->evtNodeNameInput->text();
     auto beginNum = this->beginStatus->toLongLong();
     auto endNum = this->endStatus->toLongLong();
     auto nodeComment = this->evNodeComment->toPlainText();
@@ -367,25 +365,21 @@ void EventNodes::slot_4Apply()
     q.bindValue(":id", id);
     if(!q.exec())
         qDebug() << q.lastError();
-    auto evname = this->eventModel->data(index.sibling(index.row(), 0), Qt::DisplayRole);
-    this->input->setText("");
-    this->input->setText(evname.toString());
+    auto evname = this->eventNameInput->text();
+    this->eventNameInput->setText("");
+    this->eventNameInput->setText(evname);
+
 }
 
 void EventNodes::slot_Respond2LocationAdd()
 {
-    auto index = this->eventTable->currentIndex();
-    if(!index.isValid())
-        return;
-    auto evtid = this->eventModel->oppositeID(index);
-
     auto list = Editor::Location::getSelectedItemsID();
     //获取新增location
     QVariantList locates,evts;
     foreach(auto loc, list){
         if(!this->local_List_ids.contains(loc)){
             locates << loc;
-            evts << evtid;
+            evts << this->focusedID;
         }
     }
     if(locates.size()==0)
@@ -415,76 +409,65 @@ void EventNodes::slot_Respond2LocationRemove()
     QSqlQuery q;
     q.prepare("delete "
               "from table_locationchange "
-              "where (location = :loc);");
+              "where (location = :loc)and(event_node=:eid);");
     q.bindValue(":loc",locid);
+    q.bindValue(":eid", this->focusedID);
     if(!q.exec())
         qDebug() << q.lastError();
     this->slot_targetItemChanged(QItemSelection(),QItemSelection());
 }
 
-void EventNodes::slot_TargetLocationChanged(const QModelIndex &, const QModelIndex &)
+void EventNodes::slot_ItemChanged(QStandardItem *item)
 {
-    auto index = this->localTable->currentIndex();
-    if(!index.isValid())
-        return;
-    auto locid = this->local_List_ids.at(index.row());
+    auto index = item->index();
+    auto locationid = this->local_List_ids.at(index.row());
 
-    auto index2 = this->eventTable->currentIndex();
-    if(!index2.isValid())
-        return;
-    auto entid = this->eventModel->oppositeID(index2);
+    auto physicDesc = this->locals_Model->data(index.sibling(index.row(), 2));
+    auto socialDesc = this->locals_Model->data(index.sibling(index.row(), 3));
+    if(index.column()==2)
+        physicDesc = item->text();
+    else
+        socialDesc = item->text();
 
+    //this->focuseID
     QSqlQuery q;
     q.prepare("select "
-              "end_time "
-              "from table_eventnodebasic "
-              "where ev_node_id=:eid;");
-    q.bindValue(":eid",entid);
-    if(!q.exec()){
-        qDebug() << q.lastError();
-        return;
-    }
-    if(!q.next())
-        return;
-    auto timepoint = q.value(0);
-
-    q.prepare("select "
-              "location_desc, "
-              "social_desc "
-              "from table_locationchange tlc "
-              "inner join table_eventnodebasic tenb on tlc.event_node = tenb.ev_node_id "
-              "where (tenb.end_time <= :time)and(tlc.location = :loc) "
-              "group by tlc.location "
-              "having tenb.end_time = Max(tenb.end_time);");
-    q.bindValue(":time", timepoint);
-    q.bindValue(":loc",locid);
+              "id "
+              "from table_locationchange "
+              "where(location=:loc)and(event_node=:eid);");
+    q.bindValue(":loc",locationid);
+    q.bindValue(":eid", this->focusedID);
     if(!q.exec()){
         qDebug() << q.lastError();
         return;
     }
     if(q.next()){
-        this->physicalDesc->setText(q.value(0).toString());
-        this->socialDesc->setText(q.value(1).toString());
+        //如果存在，那么唯一
+        auto recordID = q.value(0);
+        q.prepare("update table_locationchange "
+                  "set "
+                  "location_desc=:ldesc, "
+                  "social_desc=:sdesc "
+                  "where id=:id;");
+        q.bindValue(":ldesc", physicDesc);
+        q.bindValue(":sdesc", socialDesc);
+        q.bindValue(":id", recordID);
+
+        if(!q.exec())
+            qDebug() << q.lastError();
+    }else{
+        q.prepare("insert into table_locationchange "
+                  "(location, event_node, location_desc, social_desc) "
+                  "values(:loc, :evt, :ldesc, :sdesc);");
+        q.bindValue(":loc", locationid);
+        q.bindValue(":evt", this->focusedID);
+        q.bindValue(":ldesc", physicDesc);
+        q.bindValue(":sdesc", socialDesc);
+
+        if(!q.exec())
+            qDebug() << q.lastError();
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

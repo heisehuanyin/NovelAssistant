@@ -109,11 +109,7 @@ StoryBoard::StoryBoard(qlonglong id, QWidget *parent):
                   this,             &StoryBoard::slot_Response4SkillModify);
 
 
-    auto edit4Relationship(new QWidget);
-    this->tabCon->addTab(edit4Relationship, "社会关系状态编辑");
-    auto relateLayout(new QGridLayout);
-    edit4Relationship->setLayout(relateLayout);
-    relateLayout->addWidget(this->relationTable, 0, 0, 8, 5);
+    this->tabCon->addTab(this->relationTable, "社会关系状态编辑");
     this->relationTable->setModel(this->relationModel);
     this->connect(this->relationModel,  &QStandardItemModel::itemChanged,
                   this,                 &StoryBoard::slot_Response4RelationChange);
