@@ -1,4 +1,7 @@
 #include "queryutility.h"
+#include "storydisplay.h"
+#include "superdatetool.h"
+#include "dbtool.h"
 
 #include <QLabel>
 #include <QSqlQuery>
@@ -12,14 +15,18 @@ QueryUtility::QueryUtility(QWidget *parent):
     QTabWidget (parent),
     quickLook(new QTableView(this)),
     qlook(new QStandardItemModel(this)),
-    ev_node(-1),
+    ev_node(0),
     place1(new QComboBox(this)),
     previousEvents(new QTableView(this)),
-    pre_Events(new QSqlQueryModel(this)),
+    pre_Events(new QStandardItemModel(this)),
+    eventsView(new StoryDisplay(this)),
     character(new QComboBox(this)),
     char_items(new QTableView(this)),
+    citemsm(new QSqlQueryModel(this)),
     char_abilitys(new QTableView(this)),
+    cabilitysm(new QSqlQueryModel(this)),
     char_relates(new QTableView(this)),
+    crelatesm(new QSqlQueryModel(this)),
     place2(new QComboBox(this)),
     placeItemsTable(new QTableView(this)),
     physicalView(new QTextEdit(this)),
@@ -30,23 +37,33 @@ QueryUtility::QueryUtility(QWidget *parent):
 
     //事件汇总表
     auto panel0(new QWidget(this));
+    this->addTab(panel0, tr("事件"));
     auto layout0(new QVBoxLayout(panel0));
     panel0->setLayout(layout0);
     layout0->addWidget(this->place1);
-    layout0->addWidget(this->previousEvents);
+    this->connect(this->place1, &QComboBox::currentTextChanged,
+                  this,         &QueryUtility::refreshEventMap);
+    auto tabstack(new QTabWidget(panel0));
+    layout0->addWidget(tabstack);
     this->previousEvents->setModel(this->pre_Events);
-    this->addTab(panel0, tr("事件"));
+    tabstack->addTab(this->previousEvents, tr("Table"));
+    tabstack->addTab(this->eventsView, tr("EventsMap"));
 
     //查询角色演变
     auto panel1 = new QWidget(this);
     auto layout1(new QVBoxLayout(panel1));
     panel1->setLayout(layout1);
     layout1->addWidget(this->character);
+    this->connect(this->character,  &QComboBox::currentTextChanged,
+                  this,             &QueryUtility::refreshCharacter__About);
     auto tableSep = new QTabWidget(this);
     layout1->addWidget(tableSep);
     tableSep->addTab(this->char_items, tr("道具"));
+    this->char_items->setModel(this->citemsm);
     tableSep->addTab(this->char_abilitys, tr("技能"));
+    this->char_abilitys->setModel(this->cabilitysm);
     tableSep->addTab(this->char_relates, tr("人际"));
+    this->char_relates->setModel(this->crelatesm);
     this->addTab(panel1, tr("角色"));
 
     //地点查询
@@ -54,6 +71,8 @@ QueryUtility::QueryUtility(QWidget *parent):
     auto layout2 = new QVBoxLayout(panel2);
     panel2->setLayout(layout2);
     layout2->addWidget(this->place2);
+    this->connect(this->place2,     &QComboBox::currentTextChanged,
+                  this,             &QueryUtility::refreshPlace_About);
     layout2->addWidget(this->placeItemsTable);
     layout2->addWidget(new QLabel(tr("物理状态")));
     layout2->addWidget(this->physicalView);
@@ -158,13 +177,124 @@ void QueryUtility::resetBaseEvent(qlonglong ev_node)
 void QueryUtility::refreshEventMap()
 {
     //this->ev_node:事件节点id
-    QSqlQuery q;
+    auto locid = this->place1->currentData();
 
+    QSqlQuery q;
+    q.prepare("select end_time "
+              "from table_eventnodebasic "
+              "where ev_node_id = :enode;");
+    q.bindValue(":enode", this->ev_node);
+    if(!q.exec()){
+        qDebug() << q.lastError();
+        return;
+    }
+    if(!q.next())
+        return;
+
+    auto endtime = q.value(0);
+
+
+    q.prepare("select "
+              "'角色', "
+              "tcb.name, "
+              "tenb.event_name, "
+              "tenb.node_name, "
+              "tclt.char_desc, "
+              "tenb.begin_time, "
+              "tenb.end_time, "
+              "tenb.ev_node_id "
+              "from table_characterlifetracker tclt "
+              "inner join table_eventnodebasic tenb on tclt.event_id = tenb.ev_node_id "
+              "inner join table_characterbasic tcb on tclt.char_id = tcb.char_id "
+              "where (tclt.location_id = :id) and (tenb.begin_time < :time) "
+              "order by tenb.begin_time desc");
+    q.bindValue(":id",locid);
+    q.bindValue(":time", endtime);
+    if(!q.exec()){
+        qDebug() << q.lastError();
+        return;
+    }
+    this->pre_Events->clear();
+    this->eventsView->clear();
+    auto timeTool = new Support::SuperDateTool(this);
+
+    //table layout: 分类，名称，事件名称（事件名+节点名），阶段简述，开始时间，结束时间
+
+    while (q.next()) {
+        QList<QStandardItem*> row;
+        QString eventName = "";
+
+        for(int i=0; i<7; ++i){
+            //事件名称处理
+            if(i==2){
+                auto item = new QStandardItem(q.value(2).toString()+":"+q.value(3).toString());
+                eventName = item->text();
+                row.append(item);
+                continue;
+            }else if(i==3)
+                continue;
+            //涉及到日期处理
+            if(i==5 || i==6){
+                timeTool->resetDate(q.value(i).toLongLong());
+                auto item = new QStandardItem(timeTool->toString());
+                row.append(item);
+                continue;
+            }
+            auto item = new QStandardItem(q.value(i).toString());
+            row.append(item);
+        }
+        this->pre_Events->appendRow(row);
+        this->eventsView->addEvent(q.value(7).toLongLong(), eventName, q.value(5).toLongLong(), q.value(6).toLongLong());
+    }
+    QStringList header;
+    header <<"分类" <<"名称" <<"事件" <<"阶段简述" <<"开始时间" <<"结束时间";
+    this->pre_Events->setHorizontalHeaderLabels(header);
+    this->previousEvents->resizeColumnsToContents();
 }
 
 void QueryUtility::refreshCharacter__About()
 {
+    auto char_id = this->character->currentData();
 
+    QSqlQuery q;
+    q.prepare("select end_time "
+              "from table_eventnodebasic "
+              "where ev_node_id = :enode;");
+    q.bindValue(":enode", this->ev_node);
+    if(!q.exec()){
+        qDebug() << q.lastError();
+        return;
+    }
+    if(!q.next())
+        return;
+
+    auto endtime = q.value(0);
+
+    if(!q.exec(Support::DBTool::getCharsPropsUntilTime(false, char_id.toLongLong(), endtime.toLongLong()))){
+        qDebug() << q.lastError();
+        return;
+    }
+    this->citemsm->setQuery(q);
+    this->citemsm->setHeaderData(0, Qt::Horizontal, "名称");
+    this->citemsm->setHeaderData(1, Qt::Horizontal, "数量");
+    this->citemsm->setHeaderData(2, Qt::Horizontal, "备注");
+
+    if(!q.exec(Support::DBTool::getCharsRelationshipUntilTime(false, char_id.toLongLong(), endtime.toLongLong()))){
+        qDebug() << q.lastError();
+        return;
+    }
+    this->crelatesm->setQuery(q);
+    this->crelatesm->setHeaderData(0, Qt::Horizontal, "角色");
+    this->crelatesm->setHeaderData(1, Qt::Horizontal, "关系");
+    this->crelatesm->setHeaderData(2, Qt::Horizontal, "备注");
+
+    if(!q.exec(Support::DBTool::getCharsSkillsUntilTime(false, char_id.toLongLong(), endtime.toLongLong()))){
+        qDebug() << q.lastError();
+        return;
+    }
+    this->cabilitysm->setQuery(q);
+    this->cabilitysm->setHeaderData(0, Qt::Horizontal, "名称");
+    this->cabilitysm->setHeaderData(1, Qt::Horizontal, "备注");
 }
 
 void QueryUtility::refreshPlace_About()

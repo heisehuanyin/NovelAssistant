@@ -121,6 +121,13 @@ Location::~Location()
     delete apply;
 }
 
+QList<QVariant> Location::getSelectedItemsID(){
+    auto instance(new Location(nullptr));
+    instance->locQueryModel->changeCheckable(true);
+    instance->exec();
+    return instance->locQueryModel->selectedRecordIDs();
+}
+
 void Location::slot_queryLocation(const QString &text)
 {
 
@@ -195,7 +202,8 @@ void Location::slot_changeApply()
 
     QSqlQuery p;
     p.prepare("update table_locationlist "
-              "set corrdinate_suffix = :suffix, "
+              "set "
+              " corrdinate_suffix = :suffix, "
               " xposition = :xpos, "
               " yposition = :ypos, "
               " zposition = :zpos, "

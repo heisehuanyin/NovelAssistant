@@ -3,6 +3,7 @@
 #include "items.h"
 #include "ability.h"
 #include "character.h"
+#include "dbtool.h"
 
 #include <QGridLayout>
 #include <QGroupBox>
@@ -35,8 +36,6 @@ StoryBoard::StoryBoard(qlonglong id, QWidget *parent):
     removeSkill(new QPushButton(tr("删除源条目"))),
     skillTable(new QTableView),
     skillModel(new QStandardItemModel),
-    addRelation(new QPushButton(tr("添加关联"))),
-    removeRelation(new QPushButton(tr("删除源条目"))),
     relationTable(new QTableView),
     relationModel(new QStandardItemModel)
 {
@@ -51,6 +50,8 @@ StoryBoard::StoryBoard(qlonglong id, QWidget *parent):
     baseLayout->addWidget(new QLabel(tr("事件节点：")), 0, 3);
     baseLayout->addWidget(this->nodeName, 0, 4, 1, 3);
     baseLayout->addWidget(this->apply, 0, 7);
+    this->connect(this->apply,  &QPushButton::clicked,
+                  this,         &StoryBoard::slot_Response4ApplyEventChange);
 
     baseLayout->addWidget(this->time_Story, 1, 0, 11, 3);
     this->connect(this->time_Story, &Component::StoryDisplay::focuse,
@@ -109,16 +110,10 @@ StoryBoard::StoryBoard(qlonglong id, QWidget *parent):
 
 
     auto edit4Relationship(new QWidget);
+    this->tabCon->addTab(edit4Relationship, "社会关系状态编辑");
     auto relateLayout(new QGridLayout);
     edit4Relationship->setLayout(relateLayout);
     relateLayout->addWidget(this->relationTable, 0, 0, 8, 5);
-    relateLayout->addWidget(this->addRelation, 8, 0);
-    this->connect(this->addRelation,    &QPushButton::clicked,
-                  this,                 &StoryBoard::slot_Response4AddRelation);
-    relateLayout->addWidget(this->removeRelation, 8, 1);
-    this->connect(this->removeRelation, &QPushButton::clicked,
-                  this,                 &StoryBoard::slot_Response4RemoveRelation);
-    this->tabCon->addTab(edit4Relationship, "社会关系状态编辑");
     this->relationTable->setModel(this->relationModel);
     this->connect(this->relationModel,  &QStandardItemModel::itemChanged,
                   this,                 &StoryBoard::slot_Response4RelationChange);
@@ -135,7 +130,7 @@ StoryBoard::~StoryBoard()
     delete this->tabCon;
 }
 
-void StoryBoard::displayPropChange(qlonglong charid, qlonglong evnodeId)
+void StoryBoard::displayProp(qlonglong charid, qlonglong evnodeId)
 {
     qlonglong maxTime;
     {
@@ -153,22 +148,9 @@ void StoryBoard::displayPropChange(qlonglong charid, qlonglong evnodeId)
     }
 
     QSqlQuery q;
-    q.prepare("SELECT cpc.id, "
-                    "pb.name, "
-                    "cpc.number, "
-                    "cpc.comment "
-              "FROM table_characterpropchange cpc "
-                "INNER JOIN "
-                "table_eventnodebasic enb ON cpc.event_node = enb.ev_node_id "
-                "INNER JOIN "
-                "table_propbasic pb ON cpc.prop = pb.prop_id "
-              "WHERE (enb.end_time <= :endtime) and "
-                    "(cpc.char_id = :id) "
-            "GROUP BY cpc.prop "
-              "HAVING enb.end_time = max(enb.end_time);");
-    q.bindValue(":endtime", maxTime);
-    q.bindValue(":id", charid);
-    if(!q.exec())
+
+    //字符串[items_id, ]items_name, items_number, record_comment
+    if(!q.exec(Support::DBTool::getCharsPropsUntilTime(true, charid, maxTime)))
         qDebug() << q.lastError();
 
     this->ids_prop.clear();
@@ -196,7 +178,7 @@ void StoryBoard::displayPropChange(qlonglong charid, qlonglong evnodeId)
     this->propModel->setHeaderData(2, Qt::Horizontal, "备注");
 }
 
-void StoryBoard::displaySkillChange(qlonglong charid, qlonglong evnodeId)
+void StoryBoard::displaySkills(qlonglong charid, qlonglong evnodeId)
 {
 
     qlonglong maxTime;
@@ -215,21 +197,11 @@ void StoryBoard::displaySkillChange(qlonglong charid, qlonglong evnodeId)
     }
 
     QSqlQuery q2;
-    q2.prepare("SELECT cs.id, "
-                 "sl.name, "
-                 "cs.comment "
-                "FROM table_characterskills cs "
-                    "INNER JOIN "
-                    "table_eventnodebasic enb ON cs.event_node = enb.ev_node_id "
-                    "INNER JOIN "
-                    "table_skilllist sl ON cs.skill = sl.skill_id "
-                "WHERE (cs.character = :csid) AND "
-                    "(enb.end_time <= :endtime);");
-    q2.bindValue(":csid", charid);
-    q2.bindValue(":endtime", maxTime);
 
-    if(!q2.exec())
+    if(!q2.exec(Support::DBTool::getCharsSkillsUntilTime(true, charid, maxTime))){
         qDebug() << q2.lastError();
+        return;
+    }
 
     this->ids_skill.clear();
     this->skillModel->clear();
@@ -250,7 +222,7 @@ void StoryBoard::displaySkillChange(qlonglong charid, qlonglong evnodeId)
     this->skillModel->setHeaderData(1, Qt::Horizontal, "备注");
 }
 
-void StoryBoard::displayRelationChange(qlonglong charid, qlonglong evnodeId)
+void StoryBoard::displayRelation(qlonglong charid, qlonglong evnodeId)
 {
 
     qlonglong maxTime;
@@ -269,29 +241,17 @@ void StoryBoard::displayRelationChange(qlonglong charid, qlonglong evnodeId)
     }
 
     QSqlQuery q;
-    q.prepare("SELECT crs.id, "
-                "cb.name, "
-                "crs.relationship, "
-                "crs.comment "
-              "FROM table_characterrelationship crs "
-                "INNER JOIN "
-                "table_eventnodebasic enb ON crs.event_id = enb.ev_node_id "
-                "INNER JOIN "
-                "table_characterbasic cb ON crs.target_id = cb.char_id "
-              "WHERE (crs.char_id = :id) AND "
-                "(enb.end_time <= :endt) "
-              "GROUP BY crs.target_id "
-                "HAVING enb.end_time = max(enb.end_time);");
-    q.bindValue(":id", charid);
-    q.bindValue(":endt", maxTime);
 
-    if(!q.exec())
+    //[target_id, ]target_name, relationship, relationcomment
+    if(!q.exec(Support::DBTool::getCharsRelationshipUntilTime(true, charid, maxTime))){
         qDebug() << q.lastError();
+        return;
+    }
 
-    this->ids_relate.clear();
+    this->ids_character.clear();
     this->relationModel->clear();
     while (q.next()) {
-        this->ids_relate.append(q.value(0).toLongLong());
+        this->ids_character.append(q.value(0).toLongLong());
 
         QList<QStandardItem*> row;
         auto cell1 = new QStandardItem(q.value(1).toString());
@@ -374,14 +334,16 @@ void StoryBoard::displayEventDetial(qlonglong eventId)
     //地点和简述
     QSqlQuery q;
     if(!q.exec("select "
-              "location_id, "
-              "location_name "
-              "from table_locationlist;"))
+               "location_id, "
+               "location_name, "
+               "corrdinate_suffix "
+               "from table_locationlist;"))
         qDebug() << q.lastError();
 
     this->locationSelect->clear();
     while (q.next()) {
-        this->locationSelect->addItem(q.value(1).toString(), q.value(0));
+        this->locationSelect->addItem(q.value(2).toString()+":"+q.value(1).toString(),
+                                      q.value(0));
     }
 
 
@@ -423,11 +385,11 @@ void StoryBoard::displayEventDetial(qlonglong eventId)
         return;
 
     //道具
-    this->displayPropChange(this->characterID, this->focuseEvent);
+    this->displayProp(this->characterID, this->focuseEvent);
     //技能
-    this->displaySkillChange(this->characterID, this->focuseEvent);
+    this->displaySkills(this->characterID, this->focuseEvent);
     //社会关系
-    this->displayRelationChange(this->characterID, this->focuseEvent);
+    this->displayRelation(this->characterID, this->focuseEvent);
 }
 
 void StoryBoard::slot_Response4Focuse(qlonglong id)
@@ -471,6 +433,8 @@ prepareStep:
     QVariantList charids, evnodes, locations;
 
     for(int i=0; i< list.size(); ++i){
+        if(this->eventNodeList.contains(list.at(i).toLongLong()))
+            continue;
         charids << this->characterID;
         evnodes << list.at(i);
         locations << unknownLocation;
@@ -532,6 +496,123 @@ void StoryBoard::slot_Response4RemoveEventNode()
     this->displayEventDetial();
 }
 
+void StoryBoard::slot_Response4ApplyEventChange()
+{
+    auto loc_id = this->locationSelect->currentData();
+
+    this->updateRelationshipOnLocationChanged(loc_id.toLongLong());
+    QSqlQuery q;
+    q.prepare("update table_characterlifetracker "
+              "set "
+              "location_id = :locID, "
+              "char_desc = :desc "
+              "where (char_id = :cid) and "
+              "(event_id = :eid);");
+    q.bindValue(":locID", loc_id);
+    q.bindValue(":desc", this->evNode2Char_Desc->toPlainText());
+    q.bindValue(":cid", this->characterID);
+    q.bindValue(":eid", this->focuseEvent);
+    if(!q.exec())
+        qDebug() << q.lastError();
+}
+
+void StoryBoard::updateRelationshipOnLocationChanged(qlonglong locid)
+{
+    //获取之前的角色位置
+    QSqlQuery q;
+    q.prepare("select "
+              "location_id, "
+              "id "
+              "from table_characterlifetracker "
+              "where (char_id=:cid)and(event_id=:eid);");
+    q.bindValue(":cid", this->characterID);
+    q.bindValue(":eid", this->focuseEvent);
+    if(!q.exec()){
+        qDebug() << q.lastError();
+        return;
+    }
+    if(!q.next())
+        return;
+
+    auto p_loc = q.value(0);
+    auto trackerid = q.value(1);
+
+    //获取指定地点、指定时间、对指定对象相关的关系记录条目
+    q.prepare("select "
+              "tcrs.id "
+              "from table_characterrelationship tcrs "
+              "inner join table_characterlifetracker tclt on tcrs.event_id = tclt.event_id "
+              "where(tcrs.event_id=:eid)and"
+              "(tclt.location_id=:p_loc)and"
+              "(tcrs.char_id=:cid or tcrs.target_id=:cid);");
+    q.bindValue(":eid", this->focuseEvent);
+    q.bindValue(":p_loc", p_loc);
+    q.bindValue(":cid", this->characterID);
+
+    if(!q.exec()){
+        qDebug() << q.lastError();
+        return;
+    }
+    QVariantList iddel;
+    while (q.next()) {
+        iddel << q.value(0);
+    }
+
+    //删除之前事件确立的关系
+    if(iddel.size()>0){
+        q.prepare("delete from table_characterrelationship "
+                  "where id=?;");
+        q.addBindValue(iddel);
+        q.execBatch();
+    }
+
+
+    //获取指定事件发生时在新地点出现的角色
+    q.prepare("select "
+              "char_id "
+              "from table_characterlifetracker "
+              "where(event_id=:eid)and(location_id=:loc);");
+    q.bindValue(":eid",this->focuseEvent);
+    q.bindValue(":loc", locid);
+    if(!q.exec()){
+        qDebug() << q.lastError();
+        return;
+    }
+    QVariantList targets, hosts, events;
+    while (q.next()) {
+        if(q.value(0).toLongLong()==this->characterID)
+            continue;
+        targets << q.value(0);
+        hosts << this->characterID;
+        events << this->focuseEvent;
+    }
+
+    //批量添加指定角色与当地角色关系
+    if(targets.size() > 0){
+        q.prepare("insert into table_characterrelationship "
+                  "(char_id, target_id, relationship, event_id)"
+                  "values(?,?,'路人关系', ?);");
+        q.addBindValue(hosts);
+        q.addBindValue(targets);
+        q.addBindValue(events);
+        if(!q.execBatch()){
+            qDebug() << q.lastError();
+            return;
+        }
+    }
+
+
+    //最后更新tracker条目信息
+    q.prepare("update table_characterlifetracker "
+              "set "
+              "location_id=:loc "
+              "where id=:id");
+    q.bindValue(":loc", locid);
+    q.bindValue(":id", trackerid);
+    if(!q.exec())
+        qDebug() << q.lastError();
+}
+
 void StoryBoard::slot_Response4AddPropType()
 {
     auto list = Editor::Items::getSelectedItems();
@@ -563,7 +644,7 @@ void StoryBoard::slot_Response4AddPropType()
     if(!q.execBatch())
         qDebug() << q.lastError();
 
-    this->displayPropChange(this->characterID, this->focuseEvent);
+    this->displayProp(this->characterID, this->focuseEvent);
 }
 
 void StoryBoard::slot_Response4RemovePropType()
@@ -581,7 +662,7 @@ void StoryBoard::slot_Response4RemovePropType()
     if(!q.exec())
         qDebug() << q.lastError();
 
-    this->displayPropChange(this->characterID, this->focuseEvent);
+    this->displayProp(this->characterID, this->focuseEvent);
 }
 
 void StoryBoard::slot_Response4PropModify(QStandardItem *item)
@@ -665,7 +746,7 @@ void StoryBoard::slot_Response4PropModify(QStandardItem *item)
 
     }
 
-    this->displayPropChange(this->characterID, this->focuseEvent);
+    this->displayProp(this->characterID, this->focuseEvent);
 
 }
 
@@ -701,7 +782,7 @@ void StoryBoard::slot_Response4AddSkillType()
         return;
     }
 
-    this->displaySkillChange(this->characterID, this->focuseEvent);
+    this->displaySkills(this->characterID, this->focuseEvent);
 }
 
 void StoryBoard::slot_Response4RemoveSkillType()
@@ -720,7 +801,7 @@ void StoryBoard::slot_Response4RemoveSkillType()
         return;
     }
 
-    this->displaySkillChange(this->characterID, this->focuseEvent);
+    this->displaySkills(this->characterID, this->focuseEvent);
 }
 
 void StoryBoard::slot_Response4SkillModify(QStandardItem *item)
@@ -778,58 +859,7 @@ void StoryBoard::slot_Response4SkillModify(QStandardItem *item)
         qDebug() << q.lastError();
         return;
     }
-    this->displaySkillChange(this->characterID, this->focuseEvent);
-}
-
-void StoryBoard::slot_Response4AddRelation()
-{
-    if(this->focuseEvent == -1){
-        QMessageBox::critical(nullptr, "OPERATE ERROR", "未选择事件");
-        return;
-    }
-    QVariantList target, evnodes, host;
-    auto list = Editor::Character::getSelectedItems();
-    for(int i=0; i<list.size(); ++i){
-        auto item = list.at(i);
-        if(this->ids_relate.contains(item.toLongLong()))
-            continue;
-        target << item;
-        evnodes << this->focuseEvent;
-        host << this->characterID;
-    }
-    if(target.size() == 0)
-        return;
-
-    QSqlQuery q;
-    q.prepare("insert into table_characterrelationship "
-              "(char_id, target_id, relationship, event_id, comment) "
-              "values(?, ?, '路人关系', ?, '无备注');");
-    q.addBindValue(host);
-    q.addBindValue(target);
-    q.addBindValue(evnodes);
-    if(!q.execBatch()){
-        qDebug() << q.lastError();
-        return;
-    }
-    this->displayRelationChange(this->characterID, this->focuseEvent);
-}
-
-void StoryBoard::slot_Response4RemoveRelation()
-{
-    auto index = this->relationTable->currentIndex();
-    if(!index.isValid())
-        return;
-    auto id = this->ids_relate.at(index.row());
-
-    QSqlQuery q;
-    q.prepare("delete from table_characterrelationship "
-              "where id = :id;");
-    q.bindValue(":id", id);
-    if(!q.exec()){
-        qDebug() << q.lastError();
-        return;
-    }
-    this->displayRelationChange(this->characterID, this->focuseEvent);
+    this->displaySkills(this->characterID, this->focuseEvent);
 }
 
 void StoryBoard::slot_Response4RelationChange(QStandardItem *item)
@@ -837,31 +867,29 @@ void StoryBoard::slot_Response4RelationChange(QStandardItem *item)
     auto index = item->index();
     if(!index.isValid())
         return;
-    auto id = this->ids_relate.at(index.row());
-    QSqlQuery q;
-    q.prepare("select "
-              "target_id, "
-              "relationship, "
-              "comment "
-              "from table_characterrelationship "
-              "where id = :id;");
-    q.bindValue(":id", id);
-    if(!q.exec()){
-        qDebug() << q.lastError();
-        return;
-    }
-    if(!q.next())
-        return;
-    auto target_id = q.value(0);
-    auto relationship = q.value(1);
-    auto comment = q.value(2);
+    auto characterid = this->ids_character.at(index.row());
 
-    q.prepare("select "
+    //this->characterID : 主人
+    //characterid       : 指定角色
+    auto relationship = this->relationModel->data(index.sibling(1,index.column()));
+    auto comment = this->relationModel->data(index.sibling(2, index.column()));
+
+    QSqlQuery q;
+    q.prepare("SELECT "
               "id "
-              "from table_characterrelationship "
-              "where(char_id = :id) and (target_id = :tid) and (event_id = :node);");
+              "FROM table_characterrelationship "
+              "WHERE (char_id = :id) AND "
+              "(target_id = :tid) AND "
+              "(event_id = :node) "
+              "UNION "
+              "SELECT "
+              "id "
+              "FROM table_characterrelationship "
+              "WHERE (char_id = :tid) AND "
+              "(target_id = :id) AND "
+              "(event_id = :node);");
     q.bindValue(":id", this->characterID);
-    q.bindValue(":tid", target_id);
+    q.bindValue(":tid", characterid);
     q.bindValue(":node", this->focuseEvent);
     if(!q.exec()){
         qDebug() << q.lastError();
@@ -892,7 +920,7 @@ void StoryBoard::slot_Response4RelationChange(QStandardItem *item)
                   "(char_id, target_id, relationship, event_id, comment) "
                   "values(:cid, :tid, :relate, :node, :cmt);");
         q.bindValue(":cid", this->characterID);
-        q.bindValue(":tid", target_id);
+        q.bindValue(":tid", characterid);
         q.bindValue("node", this->focuseEvent);
 
         if(index.column() == 1){
@@ -908,5 +936,5 @@ void StoryBoard::slot_Response4RelationChange(QStandardItem *item)
         qDebug() << q.lastError();
         return;
     }
-    this->displayRelationChange(this->characterID, this->focuseEvent);
+    this->displayRelation(this->characterID, this->focuseEvent);
 }

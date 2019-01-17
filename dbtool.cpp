@@ -1,23 +1,109 @@
-#include "dbinittool.h"
+#include "dbtool.h"
 
 #include <QSqlQuery>
+#include <QSqlError>
+#include <QDebug>
 
 using namespace Support;
 
-DBInitTool::DBInitTool()
+DBTool::DBTool()
 {
     this->createConnection();
     auto db = QSqlDatabase::database();
     this->init_emptytable(db);
 }
 
-DBInitTool::~DBInitTool()
+DBTool::~DBTool()
 {
     auto db = QSqlDatabase::database();
     db.close();
 }
 
-bool DBInitTool::createConnection(){
+
+
+QString DBTool::getCharsRelationshipUntilTime(const bool tidAccess, const qlonglong char_id, const qlonglong timePoint)
+{
+    QString execStr = "SELECT ";
+    if(tidAccess)
+        execStr += "crs.target_id, ";
+    execStr += "cb.name, "
+               "crs.relationship, "
+               "crs.comment "
+               "FROM table_characterrelationship crs "
+               "INNER JOIN "
+               "table_eventnodebasic enb ON crs.event_id = enb.ev_node_id "
+               "INNER JOIN "
+               "table_characterbasic cb ON crs.target_id = cb.char_id "
+               "WHERE (crs.char_id = :id) AND "
+               "(enb.end_time <= :endt) "
+               "GROUP BY crs.target_id "
+               "HAVING enb.end_time = max(enb.end_time) "
+               "UNION ";
+
+
+    execStr += "SELECT ";
+    if(tidAccess)
+        execStr +=  "crs.char_id, ";
+    execStr += "cb.name, "
+               "crs.relationship, "
+               "crs.comment "
+               "FROM table_characterrelationship crs "
+               "INNER JOIN "
+               "table_eventnodebasic enb ON crs.event_id = enb.ev_node_id "
+               "INNER JOIN "
+               "table_characterbasic cb ON crs.char_id = cb.char_id "
+               "WHERE (crs.target_id = :id) AND "
+               "(enb.end_time <= :endt) "
+               "GROUP BY crs.char_id "
+               "HAVING enb.end_time = max(enb.end_time);";
+
+    execStr.replace(":id", QString("%1").arg(char_id));
+    execStr.replace(":endt", QString("%1").arg(timePoint));
+
+    return execStr;
+}
+
+QString DBTool::getCharsPropsUntilTime(const bool pidAccess, const qlonglong char_id, const qlonglong timePoint)
+{
+    QString rtn ="SELECT ";
+    if(pidAccess)
+        rtn += "cpc.id, ";
+    rtn += "pb.name, "
+           "cpc.number, "
+           "cpc.comment "
+           "FROM table_characterpropchange cpc "
+           "INNER JOIN "
+           "table_eventnodebasic enb ON cpc.event_node = enb.ev_node_id "
+           "INNER JOIN "
+           "table_propbasic pb ON cpc.prop = pb.prop_id "
+           "WHERE (enb.end_time <= :endtime) and "
+           "(cpc.char_id = :id) "
+           "GROUP BY cpc.prop "
+           "HAVING enb.end_time = max(enb.end_time);";
+    rtn.replace(":id", QString("%1").arg(char_id));
+    rtn.replace(":endtime", QString("%1").arg(timePoint));
+    return rtn;
+}
+QString DBTool::getCharsSkillsUntilTime(const bool sidAccess, const qlonglong char_id, const qlonglong timePoint)
+{
+    QString rtn = "SELECT ";
+    if(sidAccess)
+        rtn +=  "cs.id, ";
+    rtn += "sl.name, "
+           "cs.comment "
+           "FROM table_characterskills cs "
+           "INNER JOIN "
+           "table_eventnodebasic enb ON cs.event_node = enb.ev_node_id "
+           "INNER JOIN "
+           "table_skilllist sl ON cs.skill = sl.skill_id "
+           "WHERE (cs.character = :csid) AND "
+           "(enb.end_time <= :endtime);";
+    rtn.replace(":csid", QString("%1").arg(char_id));
+    rtn.replace(":endtime", QString("%1").arg(timePoint));
+    return rtn;
+}
+
+bool DBTool::createConnection(){
     auto db = QSqlDatabase::addDatabase("QSQLITE");
     db.setDatabaseName("DO_NOT_TOUCH_ANY_FILE.db");
     if(!db.open()){
@@ -27,7 +113,7 @@ bool DBInitTool::createConnection(){
     return x.exec("PRAGMA foreign_keys = ON;");
 }
 
-void DBInitTool::init_emptytable(QSqlDatabase db)
+void DBTool::init_emptytable(QSqlDatabase db)
 {
     QSqlQuery query(QSqlDatabase::database());
     auto tables = db.tables();
@@ -170,17 +256,12 @@ void DBInitTool::init_emptytable(QSqlDatabase db)
                "event_node    integer,"
                "location_desc text,"
                "social_desc   text,"
-               "prop          integer,"
-               "prop_num      integer,"
                "comment       text,"
                "CONSTRAINT lc_ll_key FOREIGN KEY(location)"
                " REFERENCES table_locationlist(location_id)"
                " ON DELETE CASCADE,"
                "CONSTRAINT lc_ene_key FOREIGN KEY(event_node)"
                " REFERENCES table_eventnodebasic(ev_node_id)"
-               " ON DELETE CASCADE,"
-               "CONSTRAINT lc_pb_key FOREIGN KEY(prop)"
-               " REFERENCES table_propbasic(prop_id)"
                " ON DELETE CASCADE);");
 
     if(!tables.contains("table_timeformat")){

@@ -89,7 +89,28 @@ void FrontEnd::refreshTabviewStatus()
 
 QWidget *FrontEnd::generateWelcomePanel()
 {
-    return new QWidget;
+    auto welcome(new QWidget(this));
+    auto layout(new QHBoxLayout(welcome));
+    welcome->setLayout(layout);
+    auto words(new QLabel(this));
+    words->setText("<body>"
+                   "<h1>简要说明</h1>"
+                   "<hr />"
+                   "<p>本软件基于项目操作，用户能够打开、关闭、保存指定项目（保存操作属于全局保存）。</p>"
+                   "<p>可以进行修改，增加、删除、移动、修改节点，每个节点关联一个文件用于存储内容。</p>"
+                   "<p>为了支持长篇作品创作，内置了基于时间线的事件管理系统，对复数的道具、技能、人际关系等统一管理。</p>"
+                   "<ul>"
+                   "<li><b>文件 》 打开项目</b>：打开系统文件选框选择指定项目进行打开操作。"
+                   "<li><b>文件 》 新建项目</b>：打开系统选择框，选择指定位置新建项目。"
+                   "<li><b>文件 》 关闭项目</b>：关闭当前正在编辑的项目。"
+                   "<li><b>文件 》 保存项目</b>：保存当前项目文件和所有在编辑内容。"
+                   "<li><b>文件 》 退出</b>：正常退出，关闭当前窗口。项目和所有编辑内容自动保存。"
+                   "</ul>"
+                   "</body>");
+    words->setWordWrap(true);
+
+    layout->addWidget(words);
+    return welcome;
 }
 
 void FrontEnd::slot_receptOpenDocument(const QModelIndex &index)

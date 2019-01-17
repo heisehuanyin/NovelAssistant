@@ -8,6 +8,8 @@
 #include <QLineEdit>
 #include <QListWidget>
 #include <QPushButton>
+#include <QSqlQueryModel>
+#include <QStandardItemModel>
 #include <QTableView>
 #include <QTextEdit>
 #include "hideidmodel.h"
@@ -48,12 +50,11 @@ private:
     QTextEdit   *const evNodeComment;
 
     QTableView  *const localTable;
+    QStandardItemModel * const locals_Model;
+    QList<QVariant> local_List_ids;
     QPushButton *const addLocation;
     QPushButton *const removeLocation;
-    QTableView  *const localProps;
-    QLabel      *const pre_socialDesc;
     QTextEdit   *const socialDesc;
-    QLabel      *const pre_physicalDesc;
     QTextEdit   *const physicalDesc;
 
 private slots:
@@ -65,6 +66,10 @@ private slots:
     void slot_editEndTime();
     void slot_stateChanged();
     void slot_4Apply();
+
+    void slot_Respond2LocationAdd();
+    void slot_Respond2LocationRemove();
+    void slot_TargetLocationChanged(const QModelIndex&, const QModelIndex&);
 };
 
 }

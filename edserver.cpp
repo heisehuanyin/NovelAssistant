@@ -1,7 +1,7 @@
 #include "edserver.h"
 #include "frontend.h"
 #include "projectsymbo.h"
-#include "dbinittool.h"
+#include "dbtool.h"
 #include "location.h"
 #include "items.h"
 #include "ability.h"
@@ -224,7 +224,7 @@ void EdServer::openNovelDatabase(QString pjtPath)
 
     if(this->dbTool)
         delete this->dbTool;
-    this->dbTool = new Support::DBInitTool;
+    this->dbTool = new Support::DBTool;
 
 
     this->mainView->setProjectTree(this->pjtSymbo->getStructure());

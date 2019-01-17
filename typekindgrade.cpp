@@ -123,6 +123,7 @@ void TypeKindGrade::slot_groupsSelected(const QString &text)
 void TypeKindGrade::slot_typesSelected(const QString &text)
 {
     this->itemsmodel->clear();
+    this->list.clear();
     if(text == "<编辑&添加>"){
         this->types->setEditable(true);
         this->types->setInsertPolicy(QComboBox::InsertAtBottom);
@@ -130,7 +131,8 @@ void TypeKindGrade::slot_typesSelected(const QString &text)
     }
     if(text == QString())
         return;
-    QString exeStr = "select mark_name, "
+    QString exeStr = "select "
+                     "mark_name, "
                      "mark_id,"
                      "comment "
                      "from table_gtm "
@@ -142,17 +144,14 @@ void TypeKindGrade::slot_typesSelected(const QString &text)
         QMessageBox::critical(this, "ERROR", "SQL语句执行错误2");
         return;
     }
-    this->list.clear();
     while (q.next()) {
         auto rowExm = QList<QStandardItem*>();
 
-        auto item = q.value(0).toString();
-        auto u1 = new QStandardItem(item);
+        auto u1 = new QStandardItem(q.value(0).toString());
         u1->setEditable(true);
         rowExm.append(u1);
 
-        item = q.value(2).toString();
-        auto u2 = new QStandardItem(item);
+        auto u2 = new QStandardItem(q.value(2).toString());
         u2->setEditable(true);
         rowExm.append(u2);
 
@@ -162,8 +161,9 @@ void TypeKindGrade::slot_typesSelected(const QString &text)
     }
     this->itemsmodel->setHeaderData(0,Qt::Horizontal,"名称");
     this->itemsmodel->setHeaderData(1,Qt::Horizontal,"备注");
+
     this->items->resizeColumnsToContents();
-    this->apply->setEnabled(false);
+
     if(this->itemsmodel->rowCount()==0){
         this->insertType->setEnabled(true);
         this->up->setEnabled(false);
@@ -174,6 +174,7 @@ void TypeKindGrade::slot_typesSelected(const QString &text)
     else{
         this->insertType->setEnabled(false);
     }
+    this->apply->setEnabled(false);
 }
 
 void TypeKindGrade::slot_insertNewType()

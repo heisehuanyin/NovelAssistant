@@ -13,7 +13,7 @@ class FrontEnd;
 
 namespace Support {
     class ProjectSymbo;
-    class DBInitTool;
+    class DBTool;
     class SyntaxHighlighter;
 }
 
@@ -41,7 +41,7 @@ public slots:
 private:
     FrontEnd *const mainView;
     Support::ProjectSymbo* pjtSymbo;
-    Support::DBInitTool *dbTool;
+    Support::DBTool *dbTool;
     QToolBar * const toolsBar;
     Component::QueryUtility *const queryUtility;
     QComboBox*const anchor;

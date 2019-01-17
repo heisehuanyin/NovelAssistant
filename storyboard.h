@@ -54,7 +54,7 @@ private:
      * @param evnodeId 事件节点id
      * @param charid 角色id
      */
-    void displayPropChange(qlonglong charid, qlonglong evnodeId);
+    void displayProp(qlonglong charid, qlonglong evnodeId);
 
 
 
@@ -68,21 +68,19 @@ private:
      * @param evnodeId 事件节点id
      * @param charid 角色id
      */
-    void displaySkillChange(qlonglong charid, qlonglong evnodeId);
+    void displaySkills(qlonglong charid, qlonglong evnodeId);
 
 
 
-    QPushButton *const addRelation,
-    *const removeRelation;
     QTableView  *const relationTable;
     QStandardItemModel *const relationModel;
-    QList<qlonglong> ids_relate;
+    QList<qlonglong> ids_character;
     /**
      * @brief 本函数用于刷新表单状态对table的每一个更改都会调用本函数进行刷新
      * @param evnodeId 事件节点id
      * @param charid 角色id
      */
-    void displayRelationChange(qlonglong charid, qlonglong evnodeId);
+    void displayRelation(qlonglong charid, qlonglong evnodeId);
 
 
 
@@ -114,6 +112,7 @@ private slots:
     void slot_Response4AddEventNode();
     void slot_Response4RemoveEventNode();
     void slot_Response4ApplyEventChange();
+    void updateRelationshipOnLocationChanged(qlonglong locid);
 
     /**
      * @brief 响应道具增加操作
@@ -132,8 +131,6 @@ private slots:
     /**
      * @brief 增加人际关系操作
      */
-    void slot_Response4AddRelation();
-    void slot_Response4RemoveRelation();
     void slot_Response4RelationChange(QStandardItem* item);
 };
 }
