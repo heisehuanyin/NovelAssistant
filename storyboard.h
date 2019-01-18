@@ -75,6 +75,7 @@ private:
     QTableView  *const relationTable;
     QStandardItemModel *const relationModel;
     QList<qlonglong> ids_character;
+    QPushButton *const addCharacter;
     /**
      * @brief 本函数用于刷新表单状态对table的每一个更改都会调用本函数进行刷新
      * @param evnodeId 事件节点id
@@ -112,7 +113,12 @@ private slots:
     void slot_Response4AddEventNode();
     void slot_Response4RemoveEventNode();
     void slot_Response4ApplyEventChange();
-    void updateRelationshipOnLocationChanged(qlonglong locid);
+    /**
+     * @brief 根据地点id，自动更新角色之间的关系：删除基于同一时间，不同地点形成的关系
+     * @param character 角色id
+     * @param locate 地点id
+     */
+    void updateRelationshipOnLocationChanged(qlonglong character, qlonglong locate);
 
     /**
      * @brief 响应道具增加操作
@@ -129,9 +135,10 @@ private slots:
     void slot_Response4SkillModify(QStandardItem* item);
 
     /**
-     * @brief 增加人际关系操作
+     * @brief 人际关系操作
      */
     void slot_Response4RelationChange(QStandardItem* item);
+    void slot_AddRelationship();
 };
 }
 

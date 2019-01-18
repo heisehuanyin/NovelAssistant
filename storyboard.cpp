@@ -37,7 +37,8 @@ StoryBoard::StoryBoard(qlonglong id, QWidget *parent):
     skillTable(new QTableView),
     skillModel(new QStandardItemModel),
     relationTable(new QTableView),
-    relationModel(new QStandardItemModel)
+    relationModel(new QStandardItemModel),
+    addCharacter(new QPushButton(tr("添加角色")))
 {
     auto baseLayout(new QGridLayout);
     //row 12     col 8(3, 3, 2)
@@ -109,8 +110,15 @@ StoryBoard::StoryBoard(qlonglong id, QWidget *parent):
                   this,             &StoryBoard::slot_Response4SkillModify);
 
 
-    this->tabCon->addTab(this->relationTable, "社会关系状态编辑");
+    auto relatePanel(new QWidget(this));
+    this->tabCon->addTab(relatePanel, "社会关系状态编辑");
+    auto relateLayout(new QGridLayout(relatePanel));
+    relatePanel->setLayout(relateLayout);
+    relateLayout->addWidget(this->relationTable, 0, 0, 8, 4);
     this->relationTable->setModel(this->relationModel);
+    relateLayout->addWidget(this->addCharacter, 8, 0);
+    this->connect(this->addCharacter,   &QPushButton::clicked,
+                  this,                 &StoryBoard::slot_AddRelationship);
     this->connect(this->relationModel,  &QStandardItemModel::itemChanged,
                   this,                 &StoryBoard::slot_Response4RelationChange);
 
@@ -172,6 +180,7 @@ void StoryBoard::displayProp(qlonglong charid, qlonglong evnodeId)
     this->propModel->setHeaderData(0, Qt::Horizontal, "道具名");
     this->propModel->setHeaderData(1, Qt::Horizontal, "道具数量");
     this->propModel->setHeaderData(2, Qt::Horizontal, "备注");
+    this->propTable->resizeColumnsToContents();
 }
 
 void StoryBoard::displaySkills(qlonglong charid, qlonglong evnodeId)
@@ -216,6 +225,7 @@ void StoryBoard::displaySkills(qlonglong charid, qlonglong evnodeId)
     }
     this->skillModel->setHeaderData(0, Qt::Horizontal, "技能名称");
     this->skillModel->setHeaderData(1, Qt::Horizontal, "备注");
+    this->skillTable->resizeColumnsToContents();
 }
 
 void StoryBoard::displayRelation(qlonglong charid, qlonglong evnodeId)
@@ -266,7 +276,7 @@ void StoryBoard::displayRelation(qlonglong charid, qlonglong evnodeId)
     this->relationModel->setHeaderData(0, Qt::Horizontal, "角色名称");
     this->relationModel->setHeaderData(1, Qt::Horizontal, "关系描述");
     this->relationModel->setHeaderData(2, Qt::Horizontal, "备注");
-
+    this->relationTable->resizeColumnsToContents();
 }
 
 void StoryBoard::displayCharacterLifetracker(qlonglong id)
@@ -496,7 +506,7 @@ void StoryBoard::slot_Response4ApplyEventChange()
 {
     auto loc_id = this->locationSelect->currentData();
 
-    this->updateRelationshipOnLocationChanged(loc_id.toLongLong());
+    this->updateRelationshipOnLocationChanged(this->characterID, loc_id.toLongLong());
     QSqlQuery q;
     q.prepare("update table_characterlifetracker "
               "set "
@@ -512,16 +522,18 @@ void StoryBoard::slot_Response4ApplyEventChange()
         qDebug() << q.lastError();
 }
 
-void StoryBoard::updateRelationshipOnLocationChanged(qlonglong locid)
+void StoryBoard::updateRelationshipOnLocationChanged(qlonglong character, qlonglong locid)
 {
     //获取之前的角色位置
     QSqlQuery q;
-    q.prepare("select "
-              "location_id, "
-              "id "
-              "from table_characterlifetracker "
-              "where (char_id=:cid)and(event_id=:eid);");
-    q.bindValue(":cid", this->characterID);
+    q.prepare("SELECT clt.location_id,"
+              "clt.id,"
+              "enb.end_time "
+              "FROM table_characterlifetracker clt "
+              "inner join table_eventnodebasic enb on clt.event_id = enb.ev_node_id "
+              "WHERE (clt.char_id = :cid) AND "
+              "(clt.event_id = :eid);");
+    q.bindValue(":cid", character);
     q.bindValue(":eid", this->focuseEvent);
     if(!q.exec()){
         qDebug() << q.lastError();
@@ -532,18 +544,33 @@ void StoryBoard::updateRelationshipOnLocationChanged(qlonglong locid)
 
     auto p_loc = q.value(0);
     auto trackerid = q.value(1);
+    auto maxTime = q.value(2);
+
+    //没变化就结束
+    if(p_loc.toLongLong() == locid)
+        return;
 
     //获取指定地点、指定时间、对指定对象相关的关系记录条目
-    q.prepare("select "
-              "tcrs.id "
-              "from table_characterrelationship tcrs "
-              "inner join table_characterlifetracker tclt on tcrs.event_id = tclt.event_id "
-              "where(tcrs.event_id=:eid)and"
-              "(tclt.location_id=:p_loc)and"
-              "(tcrs.char_id=:cid or tcrs.target_id=:cid);");
+    q.prepare("SELECT tcrs.id "
+              "FROM table_characterrelationship tcrs "
+              "INNER JOIN "
+              "table_characterlifetracker tclt ON (tcrs.event_id = tclt.event_id AND "
+              "tcrs.char_id = tclt.char_id) "
+              "WHERE (tcrs.event_id = :eid) AND "
+              "(tclt.location_id = :p_loc) AND "
+              "(tcrs.char_id = :cid) "
+              "UNION "
+              "SELECT tcrs.id "
+              "FROM table_characterrelationship tcrs "
+              "INNER JOIN "
+              "table_characterlifetracker tclt ON (tcrs.event_id = tclt.event_id AND "
+              "tcrs.target_id = tclt.char_id) "
+              "WHERE (tcrs.event_id = :eid) AND "
+              "(tclt.location_id = :p_loc) AND "
+              "(tcrs.target_id = :cid);");
     q.bindValue(":eid", this->focuseEvent);
     q.bindValue(":p_loc", p_loc);
-    q.bindValue(":cid", this->characterID);
+    q.bindValue(":cid", character);
 
     if(!q.exec()){
         qDebug() << q.lastError();
@@ -554,7 +581,7 @@ void StoryBoard::updateRelationshipOnLocationChanged(qlonglong locid)
         iddel << q.value(0);
     }
 
-    //删除之前事件确立的关系
+    //删除此事件之前地点确立的关系
     if(iddel.size()>0){
         q.prepare("delete from table_characterrelationship "
                   "where id=?;");
@@ -568,7 +595,7 @@ void StoryBoard::updateRelationshipOnLocationChanged(qlonglong locid)
               "char_id "
               "from table_characterlifetracker "
               "where(event_id=:eid)and(location_id=:loc);");
-    q.bindValue(":eid",this->focuseEvent);
+    q.bindValue(":eid", this->focuseEvent);
     q.bindValue(":loc", locid);
     if(!q.exec()){
         qDebug() << q.lastError();
@@ -576,14 +603,26 @@ void StoryBoard::updateRelationshipOnLocationChanged(qlonglong locid)
     }
     QVariantList targets, hosts, events;
     while (q.next()) {
-        if(q.value(0).toLongLong()==this->characterID)
+        if(q.value(0).toLongLong()== character)
             continue;
         targets << q.value(0);
-        hosts << this->characterID;
+        hosts << character;
         events << this->focuseEvent;
     }
 
-    //批量添加指定角色与当地角色关系
+    if(!q.exec(Support::DBTool::getCharsRelationshipUntilTime(true, character, maxTime.toLongLong()))){
+        qDebug() << q.lastError();
+        return;
+    }
+    while (q.next()) {
+        if(targets.contains(q.value(0))){
+            targets.removeAll(q.value(0));
+            hosts.removeFirst();
+            events.removeFirst();
+        }
+    }
+
+    //批量添加指定角色与当地(未曾建立过关系的)角色的关系
     if(targets.size() > 0){
         q.prepare("insert into table_characterrelationship "
                   "(char_id, target_id, relationship, event_id)"
@@ -653,7 +692,7 @@ void StoryBoard::slot_Response4RemovePropType()
 
     QSqlQuery q;
     q.prepare("delete from table_characterpropchange "
-              "where id = :id;");
+              "where prop = :id;");
     q.bindValue(":id", id);
     if(!q.exec())
         qDebug() << q.lastError();
@@ -790,7 +829,7 @@ void StoryBoard::slot_Response4RemoveSkillType()
 
     QSqlQuery q;
     q.prepare("delete from table_characterskills "
-              "where id = :id;");
+              "where skill = :id;");
     q.bindValue(":id", id);
     if(!q.exec()){
         qDebug() << q.lastError();
@@ -863,12 +902,10 @@ void StoryBoard::slot_Response4RelationChange(QStandardItem *item)
     auto index = item->index();
     if(!index.isValid())
         return;
-    auto characterid = this->ids_character.at(index.row());
+    auto charid = this->ids_character.at(index.row());
 
-    //this->characterID : 主人
-    //characterid       : 指定角色
-    auto relationship = this->relationModel->data(index.sibling(1,index.column()));
-    auto comment = this->relationModel->data(index.sibling(2, index.column()));
+    auto relationship = this->relationModel->data(index.sibling(index.row(), 1));
+    auto comment = this->relationModel->data(index.sibling(index.row(), 2));
 
     QSqlQuery q;
     q.prepare("SELECT "
@@ -885,7 +922,7 @@ void StoryBoard::slot_Response4RelationChange(QStandardItem *item)
               "(target_id = :id) AND "
               "(event_id = :node);");
     q.bindValue(":id", this->characterID);
-    q.bindValue(":tid", characterid);
+    q.bindValue(":tid", charid);
     q.bindValue(":node", this->focuseEvent);
     if(!q.exec()){
         qDebug() << q.lastError();
@@ -895,42 +932,126 @@ void StoryBoard::slot_Response4RelationChange(QStandardItem *item)
         //如果条目存在，那么唯一
         auto itemId = q.value(0);
         //修改关系
-        if(index.column() == 1){
-            q.prepare("update table_characterrelationship "
-                      "set "
-                      "relationship = :relate "
-                      "where id = :id;");
-            q.bindValue(":relate", item->text());
-        }
-        //修改注释
-        else if(index.column() == 2){
-            q.prepare("update table_characterrelationship "
-                      "set "
-                      "comment = :cmt "
-                      "where id = :id;");
-            q.bindValue(":cmt", item->text());
-        }
+        q.prepare("update table_characterrelationship "
+                  "set "
+                  "relationship = :relate, "
+                  "comment = :cmt "
+                  "where id = :id;");
+        q.bindValue(":relate", relationship);
+        q.bindValue(":cmt", comment);
         q.bindValue(":id", itemId);
+        if(!q.exec()){
+            qDebug() << q.lastError();
+            return;
+        }
     }else{
         q.prepare("insert into table_characterrelationship "
                   "(char_id, target_id, relationship, event_id, comment) "
-                  "values(:cid, :tid, :relate, :node, :cmt);");
+                  "values(:cid, :tid, :relate, :evt, :cmt);");
         q.bindValue(":cid", this->characterID);
-        q.bindValue(":tid", characterid);
-        q.bindValue("node", this->focuseEvent);
+        q.bindValue(":tid", charid);
+        q.bindValue(":relate", relationship);
+        q.bindValue(":evt", this->focuseEvent);
+        q.bindValue(":cmt", comment);
 
-        if(index.column() == 1){
-            q.bindValue(":relate", item->text());
-            q.bindValue(":cmt", comment);
-        }else if(index.column() == 2){
-            q.bindValue("relate", relationship);
-            q.bindValue(":cmt", item->text());
+        if(!q.exec()){
+            qDebug() << q.lastError();
+            return;
         }
     }
 
+    q.prepare("select id "
+              "from table_characterlifetracker "
+              "where(char_id=:cid)and(event_id=:eid);");
+    q.bindValue(":cid", charid);
+    q.bindValue(":eid", this->focuseEvent);
     if(!q.exec()){
+        qDebug() << q.lastError();
+        return;
+    }
+    auto here = this->locationSelect->currentData();
+    //存在则必为1行
+    if(q.next()){
+        this->updateRelationshipOnLocationChanged(charid, here.toLongLong());
+    }else{
+        q.prepare("insert into table_characterlifetracker "
+                  "(char_id, event_id, location_id, char_desc, comment) "
+                  "values(:char, :evt, :loc, '未知', '无备注');");
+        q.bindValue(":char", charid);
+        q.bindValue(":evt", this->focuseEvent);
+        q.bindValue(":loc", here);
+        if(q.exec())
+            qDebug() << q.lastError();
+    }
+
+    this->displayRelation(this->characterID, this->focuseEvent);
+}
+
+void StoryBoard::slot_AddRelationship()
+{
+    auto here = this->locationSelect->currentData();
+    auto list = Editor::Character::getSelectedItems();
+
+    QVariantList relation_hosts,relation_targets, relation_events;
+    QVariantList tracker_chars,tracker_evts,tracker_locs;
+    foreach (auto charitem, list) {
+        if(this->ids_character.contains(charitem.toLongLong()))
+            continue;
+        relation_targets << charitem;
+        relation_hosts << this->characterID;
+        relation_events << this->focuseEvent;
+
+        //检测指定对象lifetracker是否包含本事件
+        //如果包含(之前在不同地点经历过这个事件)，更新关系，删除就有，添加新的关系，相当于改变地点了
+        //如果不包含，在lifetracker中添加本事件
+        QSqlQuery q;
+        q.prepare("select id "
+                  "from table_characterlifetracker "
+                  "where(char_id=:cid)and(event_id=:eid);");
+        q.bindValue(":cid", charitem);
+        q.bindValue(":eid", this->focuseEvent);
+        if(!q.exec()){
+            qDebug() << q.lastError();
+            return;
+        }
+        //存在则必为1行
+        if(q.next()){
+            this->updateRelationshipOnLocationChanged(charitem.toLongLong(), here.toLongLong());
+        }else{
+            tracker_chars << charitem;
+            tracker_evts << this->focuseEvent;
+            tracker_locs << here;
+        }
+    }
+
+    if(relation_targets.size()==0)
+        return;
+
+    if(tracker_chars.size() > 0){
+        QSqlQuery q;
+        q.prepare("insert into table_characterlifetracker "
+                  "(char_id, event_id, location_id, char_desc, comment) "
+                  "values(?, ?, ?, '未知', '无备注');");
+        q.addBindValue(tracker_chars);
+        q.addBindValue(tracker_evts);
+        q.addBindValue(tracker_locs);
+        if(!q.execBatch()){
+            qDebug() << q.lastError();
+            return;
+        }
+    }
+
+    QSqlQuery q;
+    q.prepare("insert into table_characterrelationship "
+              "(char_id, target_id, event_id, relationship, comment) "
+              "values(?,?,?,'路人关系', '无备注');");
+    q.addBindValue(relation_hosts);
+    q.addBindValue(relation_targets);
+    q.addBindValue(relation_events);
+    if(!q.execBatch()){
         qDebug() << q.lastError();
         return;
     }
     this->displayRelation(this->characterID, this->focuseEvent);
 }
+

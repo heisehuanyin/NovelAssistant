@@ -28,9 +28,8 @@ QueryUtility::QueryUtility(QWidget *parent):
     char_relates(new QTableView(this)),
     crelatesm(new QSqlQueryModel(this)),
     place2(new QComboBox(this)),
-    placeItemsTable(new QTableView(this)),
-    physicalView(new QTextEdit(this)),
-    socialView(new QTextEdit(this))
+    physicalView(new QTableView(this)),
+    socialView(new QTableView(this))
 {
     this->addTab(this->quickLook, tr("关键词"));
     this->quickLook->setModel(this->qlook);
@@ -73,7 +72,6 @@ QueryUtility::QueryUtility(QWidget *parent):
     layout2->addWidget(this->place2);
     this->connect(this->place2,     &QComboBox::currentTextChanged,
                   this,             &QueryUtility::refreshPlace_About);
-    layout2->addWidget(this->placeItemsTable);
     layout2->addWidget(new QLabel(tr("物理状态")));
     layout2->addWidget(this->physicalView);
     layout2->addWidget(new QLabel(tr("人文状态")));
@@ -98,6 +96,7 @@ QueryUtility::~QueryUtility()
 void QueryUtility::reset()
 {
     this->character->clear();
+    this->place1->clear();
     this->place2->clear();
     QSqlQuery q;
     if(!q.exec("select "
@@ -172,6 +171,7 @@ void QueryUtility::resetFocusedKeywords(qlonglong item, const QString &type)
 void QueryUtility::resetBaseEvent(qlonglong ev_node)
 {
     this->ev_node = ev_node;
+    this->targetTabContextRefresh(this->currentIndex());
 }
 
 void QueryUtility::refreshEventMap()
@@ -278,6 +278,7 @@ void QueryUtility::refreshCharacter__About()
     this->citemsm->setHeaderData(0, Qt::Horizontal, "名称");
     this->citemsm->setHeaderData(1, Qt::Horizontal, "数量");
     this->citemsm->setHeaderData(2, Qt::Horizontal, "备注");
+    this->char_items->resizeColumnsToContents();
 
     if(!q.exec(Support::DBTool::getCharsRelationshipUntilTime(false, char_id.toLongLong(), endtime.toLongLong()))){
         qDebug() << q.lastError();
@@ -287,6 +288,7 @@ void QueryUtility::refreshCharacter__About()
     this->crelatesm->setHeaderData(0, Qt::Horizontal, "角色");
     this->crelatesm->setHeaderData(1, Qt::Horizontal, "关系");
     this->crelatesm->setHeaderData(2, Qt::Horizontal, "备注");
+    this->char_relates->resizeColumnsToContents();
 
     if(!q.exec(Support::DBTool::getCharsSkillsUntilTime(false, char_id.toLongLong(), endtime.toLongLong()))){
         qDebug() << q.lastError();
@@ -295,6 +297,7 @@ void QueryUtility::refreshCharacter__About()
     this->cabilitysm->setQuery(q);
     this->cabilitysm->setHeaderData(0, Qt::Horizontal, "名称");
     this->cabilitysm->setHeaderData(1, Qt::Horizontal, "备注");
+    this->char_abilitys->resizeColumnsToContents();
 }
 
 void QueryUtility::refreshPlace_About()

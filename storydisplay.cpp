@@ -152,7 +152,7 @@ void StoryCanvas::paintEvent(QPaintEvent *event)
                 QPointF headPoint(firstP1.x() + EventWidth/2, firstP1.y());
                 QRectF temp1 = QRectF(QPointF(colsLayout.size()*(EventWidth+3)+30, i * EventWidth), QSizeF(CharWidth, 5*CharWidth));
                 QRectF realRect = painter.boundingRect(temp1, Qt::AlignLeft | Qt::AlignVCenter | Qt::TextSingleLine, targetEvent->name());
-                QPointF trailPoint(colsLayout.size()*(EventWidth+3)+30, (i + 1)*realRect.height());
+                QPointF trailPoint(colsLayout.size()*(EventWidth+3)+30, (i + 1)*EventWidth);
 
                 double widthNeed = colsLayout.size()*(EventWidth+3)+30 + realRect.width();
                 if(this->fitWidth < widthNeed){
@@ -161,7 +161,7 @@ void StoryCanvas::paintEvent(QPaintEvent *event)
                 }
 
                 painter.drawLine(headPoint, trailPoint);
-                painter.drawText(QPointF(colsLayout.size()*(EventWidth+3)+30, (i + 1)*realRect.height()), targetEvent->name());
+                painter.drawText(QPointF(colsLayout.size()*(EventWidth+3)+30, (i + 1)*EventWidth), targetEvent->name());
             }else {
                 path.addRect(QRectF(firstP1, firstP2));
             }

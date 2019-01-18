@@ -55,9 +55,8 @@ namespace Component {
         QTableView *const char_relates;
         QSqlQueryModel *const crelatesm;
         QComboBox *const place2;
-        QTableView*const placeItemsTable;
-        QTextEdit *const physicalView;
-        QTextEdit *const socialView;
+        QTableView *const physicalView;
+        QTableView *const socialView;
         QList<QPair<QString,qlonglong>> keywordsList;
 
         typedef void (QueryUtility::*Exefp)(QPair<QString, qlonglong> &node, QSqlQuery &exec);

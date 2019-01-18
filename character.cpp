@@ -138,7 +138,8 @@ void Character::slot_queryCharacter(const QString &text)
     QString execStr = "select "
                       "char_id, "
                       "name, "
-                      "nikename "
+                      "nikename, "
+                      "comment "
                       "from table_characterbasic ";
     if(text != "*"){
         execStr += "where name like '%:name%' ";
@@ -146,7 +147,7 @@ void Character::slot_queryCharacter(const QString &text)
     }
     execStr += "order by birthday;";
 
-    this->tableModel->setQuery(3, execStr);
+    this->tableModel->setQuery(4, execStr);
     this->tableModel->setHorizontalHeader(0, "角色名称");
     this->tableModel->setHorizontalHeader(1, "昵称列表");
 
@@ -155,6 +156,7 @@ void Character::slot_queryCharacter(const QString &text)
     }else{
         this->addItem->setEnabled(false);
     }
+    this->table->resizeColumnsToContents();
 }
 
 void Character::slot_addItem()

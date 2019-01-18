@@ -25,40 +25,48 @@ QString DBTool::getCharsRelationshipUntilTime(const bool tidAccess, const qlongl
 {
     QString execStr = "SELECT ";
     if(tidAccess)
-        execStr += "crs.target_id, ";
-    execStr += "cb.name, "
-               "crs.relationship, "
-               "crs.comment "
-               "FROM table_characterrelationship crs "
-               "INNER JOIN "
-               "table_eventnodebasic enb ON crs.event_id = enb.ev_node_id "
-               "INNER JOIN "
-               "table_characterbasic cb ON crs.target_id = cb.char_id "
-               "WHERE (crs.char_id = :id) AND "
-               "(enb.end_time <= :endt) "
-               "GROUP BY crs.target_id "
-               "HAVING enb.end_time = max(enb.end_time) "
-               "UNION ";
+        execStr += "recent.char_id, ";
 
+    execStr+= "cb.name, "
+              "recent.relationship, "
+              "recent.comment "
+              "FROM ("
+              "SELECT char_new char_id, "
+              "relationship, "
+              "comment "
+              "FROM ( "
+              "SELECT crs.target_id char_new, "
+              "crs.relationship, "
+              "crs.comment, "
+              "enb.end_time "
+              "FROM table_characterrelationship crs "
+              "INNER JOIN "
+              "table_eventnodebasic enb ON enb.ev_node_id = crs.event_id "
+              "WHERE (crs.char_id = :cid) AND "
+              "(enb.end_time <= :time) "
+              "GROUP BY crs.target_id "
+              "HAVING enb.end_time = max(enb.end_time) "
+              "UNION "
+              "SELECT crs.char_id char_new, "
+              "crs.relationship, "
+              "crs.comment, "
+              "enb.end_time "
+              "FROM table_characterrelationship crs "
+              "INNER JOIN "
+              "table_eventnodebasic enb ON enb.ev_node_id = crs.event_id "
+              "WHERE (crs.target_id = :cid) AND "
+              "(enb.end_time <= :time) "
+              "GROUP BY crs.char_id "
+              "HAVING enb.end_time = max(enb.end_time) "
+              ")"
+              "GROUP BY char_new "
+              "HAVING end_time = max(end_time) )"
+              "recent "
+              "INNER JOIN "
+              "table_characterbasic cb ON recent.char_id = cb.char_id;";
 
-    execStr += "SELECT ";
-    if(tidAccess)
-        execStr +=  "crs.char_id, ";
-    execStr += "cb.name, "
-               "crs.relationship, "
-               "crs.comment "
-               "FROM table_characterrelationship crs "
-               "INNER JOIN "
-               "table_eventnodebasic enb ON crs.event_id = enb.ev_node_id "
-               "INNER JOIN "
-               "table_characterbasic cb ON crs.char_id = cb.char_id "
-               "WHERE (crs.target_id = :id) AND "
-               "(enb.end_time <= :endt) "
-               "GROUP BY crs.char_id "
-               "HAVING enb.end_time = max(enb.end_time);";
-
-    execStr.replace(":id", QString("%1").arg(char_id));
-    execStr.replace(":endt", QString("%1").arg(timePoint));
+    execStr.replace(":cid", QString("%1").arg(char_id));
+    execStr.replace(":time", QString("%1").arg(timePoint));
 
     return execStr;
 }
