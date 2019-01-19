@@ -54,6 +54,7 @@ QueryUtility::QueryUtility(QWidget *parent):
     this->previousEvents->setModel(this->pre_Events);
     tabstack->addTab(this->previousEvents, tr("Table"));
     tabstack->addTab(this->eventsView, tr("EventsMap"));
+    this->previousEvents->setWordWrap(true);
 
     //查询角色演变
     auto panel1 = new QWidget(this);
@@ -77,6 +78,11 @@ QueryUtility::QueryUtility(QWidget *parent):
     basicLayout->addWidget(this->char_nickname);
     basicLayout->addWidget(new QLabel(tr("备注")));
     basicLayout->addWidget(this->char_comment);
+    this->char_nickname->setWordWrap(true);
+    this->char_age->setWordWrap(true);
+    this->char_birthday->setWordWrap(true);
+    this->char_deathday->setWordWrap(true);
+    this->char_comment->setWordWrap(true);
     tableSep->addTab(basicMsg, tr("基本信息"));
     tableSep->addTab(this->char_items, tr("道具"));
     this->char_items->setModel(this->citemsm);
@@ -85,6 +91,9 @@ QueryUtility::QueryUtility(QWidget *parent):
     tableSep->addTab(this->char_relates, tr("人际"));
     this->char_relates->setModel(this->crelatesm);
     this->addTab(panel1, tr("角色属性"));
+    this->char_items->setWordWrap(true);
+    this->char_abilitys->setWordWrap(true);
+    this->char_relates->setWordWrap(true);
 
     //地点查询
     auto panel2 = new QWidget(this);

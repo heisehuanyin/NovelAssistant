@@ -371,7 +371,8 @@ void EdServer::refreshDataStatus()
     if(!q.exec("select event_name,"
                "node_name, "
                "ev_node_id "
-               "from table_eventnodebasic;"))
+               "from table_eventnodebasic "
+               "order by begin_time;"))
         qDebug() << q.lastError();
     while (q.next()) {
         auto vx = q.value(2);
