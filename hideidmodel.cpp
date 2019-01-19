@@ -26,13 +26,19 @@ void HideIdModel::changeCheckable(bool value)
 
 void HideIdModel::setQuery(int valueCount, QString sqlStatement, int indexOfId)
 {
-    this->beginResetModel();
     QSqlQuery q;
     if(!q.exec(sqlStatement)){
         qDebug() << q.lastError() << endl;
         qDebug() << sqlStatement ;
         return;
     }
+    this->setQuery(valueCount, q, indexOfId);
+}
+
+void HideIdModel::setQuery(int valueCount, QSqlQuery &q, int indexOfId)
+{
+
+    this->beginResetModel();
     auto rec = q.record();
     this->headers.clear();
     for(int i=0; i<valueCount ; ++i){

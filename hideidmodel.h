@@ -2,6 +2,7 @@
 #define HIDDENIDMODEL_H
 
 #include <QAbstractTableModel>
+#include <QSqlQuery>
 
 
 namespace Support {
@@ -43,6 +44,14 @@ namespace Support {
          * @param indexOfId 指明在此语句的目标值序列中记录id所占的index
          */
         void setQuery(int valueCount, QString sqlStatement, int indexOfId = 0);
+
+        /**
+         * @brief 一个重载方法，展示query的执行结果，执行结果中必须包含每条记录的唯一ID，并指明id索引，以便隐藏他
+         * @param valueCount query的列数目
+         * @param query 执行过的sqlquery实例，本方法仅仅展示其中的数据
+         * @param indexOfID 将被隐藏的id的索引
+         */
+        void setQuery(int valueCount, QSqlQuery &query, int indexOfID=0);
 
         void clear();
 

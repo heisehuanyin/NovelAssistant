@@ -29,7 +29,9 @@ QueryUtility::QueryUtility(QWidget *parent):
     crelatesm(new QSqlQueryModel(this)),
     place2(new QComboBox(this)),
     physicalView(new QTableView(this)),
-    socialView(new QTableView(this))
+    physicalModel(new QStandardItemModel(this)),
+    socialView(new QTableView(this)),
+    socialModel(new QStandardItemModel(this))
 {
     this->addTab(this->quickLook, tr("关键词"));
     this->quickLook->setModel(this->qlook);
@@ -63,7 +65,7 @@ QueryUtility::QueryUtility(QWidget *parent):
     this->char_abilitys->setModel(this->cabilitysm);
     tableSep->addTab(this->char_relates, tr("人际"));
     this->char_relates->setModel(this->crelatesm);
-    this->addTab(panel1, tr("角色"));
+    this->addTab(panel1, tr("角色属性"));
 
     //地点查询
     auto panel2 = new QWidget(this);
@@ -71,12 +73,14 @@ QueryUtility::QueryUtility(QWidget *parent):
     panel2->setLayout(layout2);
     layout2->addWidget(this->place2);
     this->connect(this->place2,     &QComboBox::currentTextChanged,
-                  this,             &QueryUtility::refreshPlace_About);
-    layout2->addWidget(new QLabel(tr("物理状态")));
+                  this,             &QueryUtility::refreshLocation_About);
+    layout2->addWidget(new QLabel(tr("地貌景观")));
     layout2->addWidget(this->physicalView);
-    layout2->addWidget(new QLabel(tr("人文状态")));
+    this->physicalView->setModel(this->physicalModel);
+    layout2->addWidget(new QLabel(tr("人文描述")));
     layout2->addWidget(this->socialView);
-    this->addTab(panel2, tr("地点"));
+    this->socialView->setModel(this->socialModel);
+    this->addTab(panel2, tr("地点演变"));
 
     this->map.insert("table_characterbasic", &QueryUtility::quickQueryCharacter);
     this->map.insert("table_eventnodebasic", &QueryUtility::quickQueryEvent);
@@ -256,53 +260,86 @@ void QueryUtility::refreshCharacter__About()
 {
     auto char_id = this->character->currentData();
 
+    qlonglong anyTime,endtime;
+    auto result = Support::DBTool::getRealtimeOfEventnode(this->ev_node, anyTime, endtime);
+    if(!result) return;
+
+
     QSqlQuery q;
-    q.prepare("select end_time "
-              "from table_eventnodebasic "
-              "where ev_node_id = :enode;");
-    q.bindValue(":enode", this->ev_node);
-    if(!q.exec()){
-        qDebug() << q.lastError();
-        return;
-    }
-    if(!q.next())
-        return;
+    result = Support::DBTool::getCharactersPropsUntilTime(false, char_id.toLongLong(), endtime, q);
+    if(!result) return;
 
-    auto endtime = q.value(0);
-
-    if(!q.exec(Support::DBTool::getCharsPropsUntilTime(false, char_id.toLongLong(), endtime.toLongLong()))){
-        qDebug() << q.lastError();
-        return;
-    }
     this->citemsm->setQuery(q);
     this->citemsm->setHeaderData(0, Qt::Horizontal, "名称");
-    this->citemsm->setHeaderData(1, Qt::Horizontal, "数量");
-    this->citemsm->setHeaderData(2, Qt::Horizontal, "备注");
+    this->citemsm->setHeaderData(1, Qt::Horizontal, "类型");
+    this->citemsm->setHeaderData(2, Qt::Horizontal, "级别");
+    this->citemsm->setHeaderData(3, Qt::Horizontal, "数量");
+    this->citemsm->setHeaderData(4, Qt::Horizontal, "备注");
     this->char_items->resizeColumnsToContents();
 
-    if(!q.exec(Support::DBTool::getCharsRelationshipUntilTime(false, char_id.toLongLong(), endtime.toLongLong()))){
-        qDebug() << q.lastError();
-        return;
-    }
+    result = Support::DBTool::getCharactersRelationshipUntilTime(false, char_id.toLongLong(), endtime, q);
+    if(!result) return;
+
     this->crelatesm->setQuery(q);
     this->crelatesm->setHeaderData(0, Qt::Horizontal, "角色");
     this->crelatesm->setHeaderData(1, Qt::Horizontal, "关系");
     this->crelatesm->setHeaderData(2, Qt::Horizontal, "备注");
     this->char_relates->resizeColumnsToContents();
 
-    if(!q.exec(Support::DBTool::getCharsSkillsUntilTime(false, char_id.toLongLong(), endtime.toLongLong()))){
-        qDebug() << q.lastError();
-        return;
-    }
+    result = Support::DBTool::getCharactersSkillsUntilTime(false, char_id.toLongLong(), endtime, q);
+    if(!result) return;
+
     this->cabilitysm->setQuery(q);
     this->cabilitysm->setHeaderData(0, Qt::Horizontal, "名称");
-    this->cabilitysm->setHeaderData(1, Qt::Horizontal, "备注");
+    this->cabilitysm->setHeaderData(1, Qt::Horizontal, "类型");
+    this->cabilitysm->setHeaderData(2, Qt::Horizontal, "等级");
+    this->cabilitysm->setHeaderData(3, Qt::Horizontal, "备注");
     this->char_abilitys->resizeColumnsToContents();
 }
 
-void QueryUtility::refreshPlace_About()
+void QueryUtility::refreshLocation_About()
 {
+    qlonglong anyTime,endtime;
+    auto result = Support::DBTool::getRealtimeOfEventnode(this->ev_node, anyTime, endtime);
+    if(!result) return;
 
+    auto locid = this->place2->currentData();
+
+    QSqlQuery q;
+    q.prepare("select "
+              "enb.event_name, "
+              "enb.node_name, "
+              "lc.location_desc, "
+              "lc.social_desc "
+              "from table_locationchange lc "
+              "inner join table_locationlist ll on lc.location = ll.location_id "
+              "inner join table_eventnodebasic enb on lc.event_node = enb.ev_node_id "
+              "where (lc.location = :loc) and (enb.end_time <= :time) "
+              "order by enb.end_time desc;");
+    q.bindValue(":time", endtime);
+    q.bindValue(":loc", locid);
+
+    if(!q.exec()){
+        qDebug() << q.lastError();
+        return;
+    }
+    this->physicalModel->clear();
+    this->socialModel->clear();
+
+    while (q.next()) {
+        auto name = q.value(0).toString()+":"+q.value(1).toString();
+        QList<QStandardItem*> row1;
+        row1.append(new QStandardItem(name));
+        row1.append(new QStandardItem(q.value(2).toString()));
+        this->physicalModel->appendRow(row1);
+
+        QList<QStandardItem*> row2;
+        row2.append(new QStandardItem(name));
+        row2.append(new QStandardItem(q.value(3).toString()));
+        this->socialModel->appendRow(row2);
+    }
+    this->physicalView->resizeColumnsToContents();
+    this->socialView->resizeColumnsToContents();
 }
 
 void QueryUtility::targetTabContextRefresh(int index)
@@ -311,7 +348,7 @@ void QueryUtility::targetTabContextRefresh(int index)
     case 0:break;
     case 1:this->refreshEventMap();break;
     case 2:this->refreshCharacter__About();break;
-    case 3:this->refreshPlace_About();break;
+    case 3:this->refreshLocation_About();break;
     default:qDebug() << "error";
     }
 }

@@ -19,9 +19,53 @@ DBTool::~DBTool()
     db.close();
 }
 
+bool DBTool::getRealtimeOfEventnode(const qlonglong event_id, qlonglong& startime, qlonglong &endtime)
+{
+    QSqlQuery q;
+    q.prepare("select "
+              "enb.end_time, "
+              "enb.begin_time "
+              "from table_eventnodebasic enb "
+              "where enb.ev_node_id = :id");
+    q.bindValue(":id", event_id);
+    if(!q.exec()){
+        qDebug() << q.lastError();
+        return false;
+    }
+    if(!q.next())
+        return false;
+    startime = q.value(1).toLongLong();
+    endtime = q.value(0).toLongLong();
+    return true;
+}
+
+bool DBTool::getRealLocationOnEventnode(const qlonglong event_nid, const qlonglong char_id, qlonglong &location_id, qlonglong& timeUntil)
+{
+    QSqlQuery q;
+    q.prepare("SELECT "
+              "clt.location_id, "
+              "enb.end_time "
+              "FROM table_characterlifetracker clt "
+              "inner join table_eventnodebasic enb on clt.event_id = enb.ev_node_id "
+              "WHERE (clt.char_id = :cid) AND "
+              "(clt.event_id = :eid);");
+    q.bindValue(":cid", char_id);
+    q.bindValue(":eid", event_nid);
+
+    if(!q.exec()){
+        qDebug() << q.lastError();
+        return false;
+    }
+    if(!q.next())
+        return false;
+
+    location_id = q.value(0).toLongLong();
+    timeUntil = q.value(1).toLongLong();
+    return true;
+}
 
 
-QString DBTool::getCharsRelationshipUntilTime(const bool tidAccess, const qlonglong char_id, const qlonglong timePoint)
+bool DBTool::getCharactersRelationshipUntilTime(const bool tidAccess, const qlonglong char_id, const qlonglong timePoint, QSqlQuery &q)
 {
     QString execStr = "SELECT ";
     if(tidAccess)
@@ -65,18 +109,26 @@ QString DBTool::getCharsRelationshipUntilTime(const bool tidAccess, const qlongl
               "INNER JOIN "
               "table_characterbasic cb ON recent.char_id = cb.char_id;";
 
-    execStr.replace(":cid", QString("%1").arg(char_id));
-    execStr.replace(":time", QString("%1").arg(timePoint));
+    q.prepare(execStr);
+    q.bindValue(":cid", char_id);
+    q.bindValue(":time", timePoint);
 
-    return execStr;
+    if(!q.exec()){
+        qDebug() << q.lastError();
+        return false;
+    }
+    return true;
 }
 
-QString DBTool::getCharsPropsUntilTime(const bool pidAccess, const qlonglong char_id, const qlonglong timePoint)
+
+bool DBTool::getCharactersPropsUntilTime(const bool pidAccess, const qlonglong char_id, const qlonglong timePoint, QSqlQuery &q)
 {
-    QString rtn ="SELECT ";
+    QString exs ="SELECT ";
     if(pidAccess)
-        rtn += "cpc.id, ";
-    rtn += "pb.name, "
+        exs += "pb.prop_id, ";
+    exs += "pb.name, "
+           "gtm.type_name, "
+           "gtm.mark_name, "
            "cpc.number, "
            "cpc.comment "
            "FROM table_characterpropchange cpc "
@@ -84,31 +136,52 @@ QString DBTool::getCharsPropsUntilTime(const bool pidAccess, const qlonglong cha
            "table_eventnodebasic enb ON cpc.event_node = enb.ev_node_id "
            "INNER JOIN "
            "table_propbasic pb ON cpc.prop = pb.prop_id "
+           "inner join "
+           "table_gtm gtm on pb.mark = gtm.mark_id "
            "WHERE (enb.end_time <= :endtime) and "
            "(cpc.char_id = :id) "
            "GROUP BY cpc.prop "
            "HAVING enb.end_time = max(enb.end_time);";
-    rtn.replace(":id", QString("%1").arg(char_id));
-    rtn.replace(":endtime", QString("%1").arg(timePoint));
-    return rtn;
+
+    q.prepare(exs);
+    q.bindValue(":id", char_id);
+    q.bindValue(":endtime", timePoint);
+
+    if(!q.exec()){
+        qDebug() << q.lastError();
+        return false;
+    }
+    return true;
 }
-QString DBTool::getCharsSkillsUntilTime(const bool sidAccess, const qlonglong char_id, const qlonglong timePoint)
+
+
+bool DBTool::getCharactersSkillsUntilTime(const bool sidAccess, const qlonglong char_id, const qlonglong timePoint, QSqlQuery &q)
 {
     QString rtn = "SELECT ";
     if(sidAccess)
-        rtn +=  "cs.id, ";
+        rtn +=  "sl.skill_id, ";
     rtn += "sl.name, "
+           "gtm.type_name, "
+           "gtm.mark_name, "
            "cs.comment "
            "FROM table_characterskills cs "
            "INNER JOIN "
            "table_eventnodebasic enb ON cs.event_node = enb.ev_node_id "
            "INNER JOIN "
            "table_skilllist sl ON cs.skill = sl.skill_id "
+           "inner join "
+           "table_gtm gtm on sl.mark = gtm.mark_id "
            "WHERE (cs.character = :csid) AND "
            "(enb.end_time <= :endtime);";
-    rtn.replace(":csid", QString("%1").arg(char_id));
-    rtn.replace(":endtime", QString("%1").arg(timePoint));
-    return rtn;
+    q.prepare(rtn);
+    q.bindValue(":csid", char_id);
+    q.bindValue(":endtime", timePoint);
+
+    if(!q.exec()){
+        qDebug() << q.lastError();
+        return false;
+    }
+    return true;
 }
 
 bool DBTool::createConnection(){

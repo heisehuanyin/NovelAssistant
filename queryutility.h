@@ -40,6 +40,7 @@ namespace Component {
         void resetBaseEvent(qlonglong ev_node);
 
     private:
+        QList<QPair<QString,qlonglong>> keywordsList;
         QTableView *const quickLook;//快速信息清单
         QStandardItemModel*const qlook;
         qlonglong   ev_node;
@@ -56,8 +57,10 @@ namespace Component {
         QSqlQueryModel *const crelatesm;
         QComboBox *const place2;
         QTableView *const physicalView;
+        QStandardItemModel*const physicalModel;
         QTableView *const socialView;
-        QList<QPair<QString,qlonglong>> keywordsList;
+        QStandardItemModel*const socialModel;
+
 
         typedef void (QueryUtility::*Exefp)(QPair<QString, qlonglong> &node, QSqlQuery &exec);
         QHash<QString, Exefp> map;
@@ -73,7 +76,7 @@ namespace Component {
         /**
      * @brief 基于事件时间点，刷新地点相关（人文、物理风貌，绑定道具）
      */
-        void refreshPlace_About();
+        void refreshLocation_About();
 
         /**
      * @brief 快速查询角色简略信息

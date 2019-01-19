@@ -304,7 +304,7 @@ void EventNodes::slot_targetItemChanged(const QItemSelection &, const QItemSelec
         this->local_List_ids.append(q.value(4));
     }
     QStringList headers;
-    headers <<"前缀" <<"名称" <<"人文表述"<<"地貌表述";
+    headers <<"前缀" <<"名称" <<"地貌景观"<<"人文表述";
     this->locals_Model->setHorizontalHeaderLabels(headers);
 }
 
