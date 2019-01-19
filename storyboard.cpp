@@ -41,6 +41,7 @@ StoryBoard::StoryBoard(qlonglong id, QWidget *parent):
     relationModel(new QStandardItemModel),
     addCharacter(new QPushButton(tr("添加角色")))
 {
+    this->setWindowTitle("故事板");
     auto baseLayout(new QGridLayout);
     //row 12     col 8(3, 3, 2)
     this->setLayout(baseLayout);

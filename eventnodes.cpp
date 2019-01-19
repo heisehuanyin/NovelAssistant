@@ -32,6 +32,7 @@ EventNodes::EventNodes(QWidget *parent):
     addLocation(new QPushButton(tr("添加地点"))),
     removeLocation(new QPushButton(tr("移除地点")))
 {
+    this->setWindowTitle("事件节点编辑器");
     auto baseLayout(new QGridLayout);
     this->setLayout(baseLayout);
 

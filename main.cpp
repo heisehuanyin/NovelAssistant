@@ -5,7 +5,7 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
-    EdServer x("test");
+    EdServer x("WsNovelAssistant");
     x.openGraphicsModel();
 
     auto val = a.exec();
