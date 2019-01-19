@@ -115,7 +115,8 @@ void StoryCanvas::paintEvent(QPaintEvent *event)
 
     //以节点截断为基础，渐次绘制
     for(int i=0; i<this->timeLine.size()-1 ; ++i){
-
+        auto start = this->timeLine.at(i);
+        auto end = this->timeLine.at(i+1);
 
         for(int colIndex=0;colIndex < colsLayout.size(); ++colIndex){
             auto targetEvent = paintCtrl.value(colIndex);
@@ -125,9 +126,8 @@ void StoryCanvas::paintEvent(QPaintEvent *event)
                 paintCtrl.insert(colIndex, targetEvent);
             }
 
-            int tStartIndex = this->timeLine.indexOf(targetEvent->startTime());
-            int tEndIndex = this->timeLine.indexOf(targetEvent->endTime());
-            if(tStartIndex > i || tEndIndex < i+1){
+            if(targetEvent->startTime()->time() > end->time() ||
+                    targetEvent->endTime()->time() < start->time()){
                 continue;
             }
 
@@ -143,7 +143,7 @@ void StoryCanvas::paintEvent(QPaintEvent *event)
 
 
             //如果是事件开始则绘制圆头
-            if(i == tStartIndex){
+            if(targetEvent->startTime()->time() == start->time()){
                 path.addEllipse(QRectF(firstP1, firstP2));
 
                 QPen pen(Qt::black, LineWidth, Qt::DotLine);
@@ -169,15 +169,16 @@ void StoryCanvas::paintEvent(QPaintEvent *event)
             path.addRect(QRectF(middleP1, middleP2));
 
             //如果是事件结束则绘制圆头
-            if(i+1 == tEndIndex){
+            if(targetEvent->endTime()->time() == end->time()){
                 path.addEllipse(QRectF(secondP1, secondP2));
 
                 auto colTarget = colsLayout.at(colIndex);
                 auto index = colTarget->indexOf(targetEvent);
 
+                //get next event
                 EventSymbo * val = nullptr;
-                if(index < colTarget->size()-1){
-                    val = colTarget->at(index + 1);
+                if(index+1 < colTarget->size()){
+                    val = colTarget->at(index+1);
                 }
                 paintCtrl.insert(colIndex, val);
 
@@ -280,6 +281,14 @@ void StoryCanvas::eventSymboReLayout()
         }
     }
     std::sort(this->timeLine.begin(), this->timeLine.end(), StoryCanvas::compareTimePoint);
+
+    //整理timeline
+    for(int i=1; i<timeLine.size(); ++i){
+        if(this->timeLine.at(i-1)->time() == this->timeLine.at(i)->time()){
+            this->timeLine.removeAt(i);
+            i--;
+        }
+    }
 }
 
 bool StoryCanvas::compareEvSymbo(EventSymbo *ev1, EventSymbo *ev2)
