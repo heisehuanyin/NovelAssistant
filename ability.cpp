@@ -53,7 +53,7 @@ Ability::Ability(QWidget * parent):
     this->table->setSelectionMode(QAbstractItemView::SingleSelection);
     this->table->setSelectionBehavior(QAbstractItemView::SelectRows);
     auto smodel = this->table->selectionModel();
-    this->connect(smodel, &QItemSelectionModel::selectionChanged,
+    this->connect(smodel, &QItemSelectionModel::currentChanged,
                   this,   &Ability::slot_responseItemSelection);
     auto x = new QLabel(tr("等级:"));
     grid->addWidget(x, 1, 3);
@@ -203,11 +203,12 @@ void Ability::slot_clearStatus()
     this->apply->setEnabled(false);
 }
 
-void Ability::slot_responseItemSelection(const QItemSelection &, const QItemSelection &)
+void Ability::slot_responseItemSelection(const QModelIndex &index, const QModelIndex &)
 {
-    auto index = this->table->currentIndex();
-    if(!index.isValid())
+    if(!index.isValid()){
+        this->slot_clearStatus();
         return;
+    }
 
     auto id = this->tableModel->oppositeID(index);
 
@@ -334,7 +335,7 @@ void Ability::slot_levelEdit()
     Editor::TypeKindGrade x(this);
     x.exec();
 
-    this->slot_responseItemSelection(QItemSelection(), QItemSelection());
+    this->slot_responseItemSelection(QModelIndex(), QModelIndex());
 }
 
 

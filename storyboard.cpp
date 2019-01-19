@@ -20,6 +20,7 @@ StoryBoard::StoryBoard(qlonglong id, QWidget *parent):
     focuseEvent(-1),
     charName(new QLabel),
     nodeName(new QLabel),
+    start_end(new QLabel(tr("未知"))),
     apply(new QPushButton(tr("应用变更"))),
     time_Story(new Component::StoryDisplay(this)),
     tabCon(new QTabWidget(this)),
@@ -46,10 +47,17 @@ StoryBoard::StoryBoard(qlonglong id, QWidget *parent):
     baseLayout->setRowStretch(0,0);
     baseLayout->setRowMinimumHeight(0, 10);
 
-    baseLayout->addWidget(new QLabel(tr("姓名：")));
-    baseLayout->addWidget(this->charName, 0, 1, 1, 2);
-    baseLayout->addWidget(new QLabel(tr("事件节点：")), 0, 3);
-    baseLayout->addWidget(this->nodeName, 0, 4, 1, 3);
+    auto stackPanel(new QWidget(this));
+    auto hboxlayout(new QHBoxLayout(stackPanel));
+    stackPanel->setLayout(hboxlayout);
+    hboxlayout->addWidget(new QLabel(tr("目标：")));
+    hboxlayout->addWidget(this->charName);
+    hboxlayout->addWidget(new QLabel("("));
+    hboxlayout->addWidget(this->nodeName);
+    hboxlayout->addWidget(new QLabel(")        起止时间："));
+    hboxlayout->addWidget(this->start_end);
+    hboxlayout->addStretch();
+    baseLayout->addWidget(stackPanel, 0, 0, 1, 7);
     baseLayout->addWidget(this->apply, 0, 7);
     this->connect(this->apply,  &QPushButton::clicked,
                   this,         &StoryBoard::slot_Response4ApplyEventChange);
@@ -287,7 +295,8 @@ void StoryBoard::displayCharacterLifetracker(qlonglong id)
 void StoryBoard::displayEventDetial(qlonglong eventId)
 {
     if(eventId == -1){
-        this->nodeName->setText("");
+        this->nodeName->setText("未知");
+        this->start_end->setText("未知");
         this->locationSelect->clear();
         this->evNode2Char_Desc->setText("");
 
@@ -297,7 +306,14 @@ void StoryBoard::displayEventDetial(qlonglong eventId)
         return;
     }
 
-
+    auto timeTool(new Support::SuperDateTool(this));
+    qlonglong starttime,endtime;
+    Support::DBTool::getRealtimeOfEventnode(eventId, starttime, endtime);
+    timeTool->resetDate(starttime);
+    auto stStr = timeTool->toString();
+    timeTool->resetDate(endtime);
+    this->start_end->setText(stStr + "-" + timeTool->toString());
+    delete timeTool;
 
     //地点和简述
     QSqlQuery q;
@@ -370,6 +386,7 @@ void StoryBoard::slot_Response4Defocuse()
 {
     this->focuseEvent = -1;
     this->displayEventDetial();
+    this->start_end->setText("未知");
 }
 
 void StoryBoard::slot_Response4AddEventNode()

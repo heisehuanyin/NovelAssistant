@@ -282,6 +282,8 @@ void QueryUtility::refreshEventMap()
     header <<"分类" <<"名称" <<"事件" <<"阶段简述" <<"开始时间" <<"结束时间";
     this->pre_Events->setHorizontalHeaderLabels(header);
     this->previousEvents->resizeColumnsToContents();
+
+    delete timeTool;
 }
 
 void QueryUtility::refreshCharacter__About()
@@ -358,6 +360,7 @@ void QueryUtility::refreshCharacter__About()
         auto lastNum = span<0?"未出世":time_t->toString();
         this->char_age->setText(preNum + "-" + lastNum);
     }
+    delete time_t;
 }
 
 void QueryUtility::refreshLocation_About()

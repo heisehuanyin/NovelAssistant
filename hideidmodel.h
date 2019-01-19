@@ -70,7 +70,7 @@ namespace Support {
          */
         QList<QVariant> selectedRecordIDs();
 
-        QVariant oppositeID(QModelIndex &index);
+        QVariant oppositeID(const QModelIndex &index);
 
     signals:
         /**

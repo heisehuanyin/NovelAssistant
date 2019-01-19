@@ -34,6 +34,7 @@ private:
     QList<qlonglong> eventNodeList;
     QLabel *const charName;
     QLabel *const nodeName;
+    QLabel *const start_end;
     QPushButton *const apply;
     Component::StoryDisplay *const time_Story;
     QTabWidget *const tabCon;

@@ -8,7 +8,7 @@
 //定义绘制图形线条宽度
 #define EventWidth 20.0
 //定义图元标签字号
-#define CharWidth 16
+#define CharWidth 18
 #define LineWidth 2
 
 /**
@@ -147,6 +147,7 @@ private:
     //绘制过程中聚焦控制
     QHash<int, EventSymbo*> paintCtrl;
     double fitWidth;
+    double fitHeight;
     QRectF focuseRect;
 
     void eventSymboReLayout();

@@ -132,7 +132,10 @@ EventNodes::EventNodes(QWidget *parent):
     this->apply->setEnabled(false);
 }
 
-EventNodes::~EventNodes(){}
+EventNodes::~EventNodes(){
+    delete this->beginStatus;
+    delete this->endStatus;
+}
 
 QList<QVariant> EventNodes::getSelectedItems()
 {
@@ -319,8 +322,8 @@ void EventNodes::slot_targetItemChanged(const QItemSelection &, const QItemSelec
 void EventNodes::slot_editBeginTime()
 {
     auto time_value = this->beginStatus->dateEdit();
-    if(time_value > this->endStatus->toLongLong()){
-        QMessageBox::critical(this, "date error", "起始日期不可晚于终末日期！");
+    if(time_value >= this->endStatus->toLongLong()){
+        QMessageBox::critical(this, "DATA ERROR", "起始日期必须早于终末日期！");
         return;
     }
     this->beginStatus->resetDate(time_value);
@@ -331,8 +334,8 @@ void EventNodes::slot_editBeginTime()
 void EventNodes::slot_editEndTime()
 {
     auto time_value = this->endStatus->dateEdit();
-    if(this->beginStatus->toLongLong() > time_value){
-        QMessageBox::critical(this, "date error", "起始日期不可晚于终末日期！");
+    if(this->beginStatus->toLongLong() >= time_value){
+        QMessageBox::critical(this, "DATA ERROR", "起始日期必须早于终末日期！");
         return;
     }
     this->endStatus->resetDate(time_value);

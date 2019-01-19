@@ -37,6 +37,7 @@ StoryCanvas::StoryCanvas(QWidget *parent):
     QWidget (parent),
     focuseID(-1),
     fitWidth(20),
+    fitHeight(0),
     focuseRect(QRectF(0.0,0.0,0.0,0.0))
 {
 
@@ -62,7 +63,8 @@ void StoryCanvas::removeEvent(const qlonglong idNum)
 QSize StoryCanvas::getFitSize()
 {
     double h = this->timeLine.size() * EventWidth;
-    return QSize((int)this->fitWidth, (int)h + 4);
+    return QSize(static_cast<int>(this->fitWidth + 20),
+                 (h>this->fitHeight)?static_cast<int>(h+10):static_cast<int>(this->fitHeight+10));
 }
 
 void StoryCanvas::clear()
@@ -74,6 +76,8 @@ void StoryCanvas::clear()
     this->focuseID = -1;
     this->timeLine.clear();
     this->paintCtrl.clear();
+    this->fitHeight = 0;
+    this->fitWidth = 20;
 
     auto values = this->evCon.values();
     this->evCon.clear();
@@ -82,6 +86,7 @@ void StoryCanvas::clear()
     }
 
     this->eventSymboReLayout();
+    this->repaint();
 }
 
 void StoryCanvas::paintEvent(QPaintEvent *event)
@@ -112,6 +117,8 @@ void StoryCanvas::paintEvent(QPaintEvent *event)
     painter.translate(3,2);
 
 
+    auto events = this->evCon.values();
+    std::sort(events.begin(), events.end(), StoryCanvas::compareEvSymbo);
 
     //以节点截断为基础，渐次绘制
     for(int i=0; i<this->timeLine.size()-1 ; ++i){
@@ -121,13 +128,8 @@ void StoryCanvas::paintEvent(QPaintEvent *event)
         for(int colIndex=0;colIndex < colsLayout.size(); ++colIndex){
             auto targetEvent = paintCtrl.value(colIndex);
 
-            if(targetEvent == nullptr){
-                targetEvent = colsLayout.at(colIndex)->at(0);
-                paintCtrl.insert(colIndex, targetEvent);
-            }
-
-            if(targetEvent->startTime()->time() > end->time() ||
-                    targetEvent->endTime()->time() < start->time()){
+            if(targetEvent->startTime()->time() >= end->time() ||
+                    targetEvent->endTime()->time() <= start->time()){
                 continue;
             }
 
@@ -146,22 +148,38 @@ void StoryCanvas::paintEvent(QPaintEvent *event)
             if(targetEvent->startTime()->time() == start->time()){
                 path.addEllipse(QRectF(firstP1, firstP2));
 
-                QPen pen(Qt::black, LineWidth, Qt::DotLine);
+                QPen pen;
+                if(this->evCon.value(this->focuseID)==targetEvent){
+                    pen = QPen(Qt::red, LineWidth, Qt::DotLine);
+                }else{
+                    pen = QPen(Qt::black, LineWidth, Qt::DotLine);
+                }
                 painter.setPen(pen);
 
+                //symbo head point
                 QPointF headPoint(firstP1.x() + EventWidth/2, firstP1.y());
-                QRectF temp1 = QRectF(QPointF(colsLayout.size()*(EventWidth+3)+30, i * EventWidth), QSizeF(CharWidth, 5*CharWidth));
-                QRectF realRect = painter.boundingRect(temp1, Qt::AlignLeft | Qt::AlignVCenter | Qt::TextSingleLine, targetEvent->name());
-                QPointF trailPoint(colsLayout.size()*(EventWidth+3)+30, (i + 1)*EventWidth);
+
+                QRectF temp1 = QRectF(QPointF(colsLayout.size()*(EventWidth+3)+30, i * EventWidth),
+                                      QSizeF(CharWidth, 5*CharWidth));
+                QRectF realRect = painter.boundingRect(temp1,
+                                                       Qt::AlignLeft | Qt::AlignVCenter | Qt::TextSingleLine,
+                                                       targetEvent->name());
+
+                QPointF trailPoint(colsLayout.size()*(EventWidth+3)+30, (events.indexOf(targetEvent)+1)*realRect.height());
 
                 double widthNeed = colsLayout.size()*(EventWidth+3)+30 + realRect.width();
+                double heightNeed = evCon.size() * realRect.height();
                 if(this->fitWidth < widthNeed){
                     this->fitWidth = widthNeed + 10;
                     emit this->resizeRequest();
                 }
+                if(this->fitHeight < heightNeed){
+                    this->fitHeight = heightNeed;
+                    emit this->resizeRequest();
+                }
 
                 painter.drawLine(headPoint, trailPoint);
-                painter.drawText(QPointF(colsLayout.size()*(EventWidth+3)+30, (i + 1)*EventWidth), targetEvent->name());
+                painter.drawText(trailPoint, targetEvent->name());
             }else {
                 path.addRect(QRectF(firstP1, firstP2));
             }
@@ -179,6 +197,8 @@ void StoryCanvas::paintEvent(QPaintEvent *event)
                 EventSymbo * val = nullptr;
                 if(index+1 < colTarget->size()){
                     val = colTarget->at(index+1);
+                }else{
+                    val = colTarget->at(0);
                 }
                 paintCtrl.insert(colIndex, val);
 
@@ -189,9 +209,9 @@ void StoryCanvas::paintEvent(QPaintEvent *event)
             auto timeSpan = targetEvent->endTime()->time() - targetEvent->startTime()->time();
             auto colorNum = colorStep * timeSpan;
 
-            auto valR =(int) (colorNum) / (255*255);
-            auto valG =(int) (colorNum - valR*255*255) / 255;
-            auto valB =(int) (colorNum - valR*255*255 - valG*255) / 255;
+            auto valR =static_cast<int>((colorNum) / (255*255));
+            auto valG =static_cast<int>((colorNum - valR*255*255) / 255);
+            auto valB =static_cast<int>((colorNum - valR*255*255 - valG*255) / 255);
 
             QColor c(valR,valG,valB);
 
@@ -214,22 +234,30 @@ void StoryCanvas::mousePressEvent(QMouseEvent *event)
 {
     auto point = event->pos();
 
-    auto colIndex =(int) (point.x() / (EventWidth+3));
-    auto rowIndex =(int) (point.y() / EventWidth);
+    auto colIndex =static_cast<int>(point.x() / (EventWidth+3));
+    auto rowIndex =static_cast<int>(point.y() / EventWidth);
 
     if(colIndex < this->colsLayout.size()){
         auto colist = this->colsLayout.at(colIndex);
 
         for(int i=0; i<colist->size(); ++i){
             auto targetEvent = colist->at(i);
-            auto startIndex = timeLine.indexOf(targetEvent->startTime());
-            auto endIndex = timeLine.indexOf(targetEvent->endTime());
+            int startIndex = 0, endIndex = 0;
+
+            for(int wsws=0; wsws < timeLine.size(); ++wsws){
+                auto point = timeLine.at(wsws);
+                if(point->time() == targetEvent->startTime()->time())
+                    startIndex = wsws;
+                if(point->time() == targetEvent->endTime()->time())
+                    endIndex = wsws;
+            }
 
             if(startIndex <= rowIndex && endIndex >= rowIndex){
                 auto x = this->evCon.keys(targetEvent);
                 this->focuseID = x.at(0);
+
                 auto nodeSpan = endIndex - startIndex + 1;
-                QPointF ltop(colIndex * (EventWidth + 3) -1, this->timeLine.indexOf(targetEvent->startTime()) * EventWidth);
+                QPointF ltop(colIndex * (EventWidth + 3) -1, startIndex * EventWidth);
                 this->focuseRect = QRectF(ltop, QSizeF(EventWidth + 2, nodeSpan * EventWidth));
 
                 emit this->focuse(this->focuseID);

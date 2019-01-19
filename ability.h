@@ -47,7 +47,7 @@ private slots:
     void slot_addItem();
     void slot_removeItem();
     void slot_clearStatus();
-    void slot_responseItemSelection(const QItemSelection &, const QItemSelection &);
+    void slot_responseItemSelection(const QModelIndex &index = QModelIndex(), const QModelIndex& = QModelIndex());
     void slot_responseApply();
     void slot_statusChanged();
     void slot_levelEdit();

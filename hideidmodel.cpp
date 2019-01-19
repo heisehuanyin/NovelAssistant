@@ -117,7 +117,7 @@ QList<QVariant> HideIdModel::selectedRecordIDs()
     return this->selectedIDs;
 }
 
-QVariant HideIdModel::oppositeID(QModelIndex &index)
+QVariant HideIdModel::oppositeID(const QModelIndex &index)
 {
     if(!index.isValid())
         return QVariant();

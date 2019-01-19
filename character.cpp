@@ -229,8 +229,8 @@ void Character::slot_4apply()
 void Character::slot_birthEdit()
 {
     auto time_temp = this->birthEdit->dateEdit();
-    if(time_temp > this->deathEdit->toLongLong()){
-        QMessageBox::critical(this, "Date Error", "出生日期不能大于死亡日期！");
+    if(time_temp >= this->deathEdit->toLongLong()){
+        QMessageBox::critical(this, "Date Error", "出生日期必须小于死亡日期！");
         return;
     }
     this->birthEdit->resetDate(time_temp);
@@ -243,8 +243,8 @@ void Character::slot_birthEdit()
 void Character::slot_deathEdit()
 {
     auto time_temp = this->deathEdit->dateEdit();
-    if(this->birthEdit->toLongLong() > time_temp){
-        QMessageBox::critical(this, "Date Error", "出生日期不能大于死亡日期！");
+    if(this->birthEdit->toLongLong() >= time_temp){
+        QMessageBox::critical(this, "Date Error", "出生日期必须小于死亡日期！");
         return;
     }
     this->deathEdit->resetDate(time_temp);
