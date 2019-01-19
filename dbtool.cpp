@@ -172,7 +172,9 @@ bool DBTool::getCharactersSkillsUntilTime(const bool sidAccess, const qlonglong 
            "inner join "
            "table_gtm gtm on sl.mark = gtm.mark_id "
            "WHERE (cs.character = :csid) AND "
-           "(enb.end_time <= :endtime);";
+           "(enb.end_time <= :endtime) "
+           "GROUP BY sl.skill_id "
+           "HAVING enb.end_time = max(enb.end_time);";
     q.prepare(rtn);
     q.bindValue(":csid", char_id);
     q.bindValue(":endtime", timePoint);

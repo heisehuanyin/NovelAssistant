@@ -750,8 +750,10 @@ void StoryBoard::slot_Response4RemoveSkillType()
 
     QSqlQuery q;
     q.prepare("delete from table_characterskills "
-              "where skill = :id;");
+              "where (skill = :id) and (character=:cid);");
     q.bindValue(":id", skill_id);
+    q.bindValue(":cid", this->characterID);
+
     if(!q.exec()){
         qDebug() << q.lastError();
         return;
@@ -793,7 +795,7 @@ void StoryBoard::slot_Response4SkillModify(QStandardItem *item)
         q.prepare("insert into table_characterskills "
                   "(character, skill, event_node, comment) "
                   "values(:cid, :skill, :enode, :cmt);");
-        q.bindValue("cid", this->characterID);
+        q.bindValue(":cid", this->characterID);
         q.bindValue(":skill", skillType);
         q.bindValue(":enode", this->focuseEvent);
         q.bindValue(":cmt", item->text());

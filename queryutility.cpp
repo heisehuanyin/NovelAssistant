@@ -21,6 +21,11 @@ QueryUtility::QueryUtility(QWidget *parent):
     pre_Events(new QStandardItemModel(this)),
     eventsView(new StoryDisplay(this)),
     character(new QComboBox(this)),
+    char_age(new QLabel(this)),
+    char_birthday(new QLabel(this)),
+    char_deathday(new QLabel(this)),
+    char_nickname(new QLabel(this)),
+    char_comment(new QLabel(this)),
     char_items(new QTableView(this)),
     citemsm(new QSqlQueryModel(this)),
     char_abilitys(new QTableView(this)),
@@ -59,6 +64,20 @@ QueryUtility::QueryUtility(QWidget *parent):
                   this,             &QueryUtility::refreshCharacter__About);
     auto tableSep = new QTabWidget(this);
     layout1->addWidget(tableSep);
+    auto basicMsg(new QWidget(this));
+    auto basicLayout(new QVBoxLayout(basicMsg));
+    basicMsg->setLayout(basicLayout);
+    basicLayout->addWidget(new QLabel(tr("年龄")));
+    basicLayout->addWidget(this->char_age);
+    basicLayout->addWidget(new QLabel(tr("生于")));
+    basicLayout->addWidget(this->char_birthday);
+    basicLayout->addWidget(new QLabel(tr("卒于")));
+    basicLayout->addWidget(this->char_deathday);
+    basicLayout->addWidget(new QLabel(tr("昵称")));
+    basicLayout->addWidget(this->char_nickname);
+    basicLayout->addWidget(new QLabel(tr("备注")));
+    basicLayout->addWidget(this->char_comment);
+    tableSep->addTab(basicMsg, tr("基本信息"));
     tableSep->addTab(this->char_items, tr("道具"));
     this->char_items->setModel(this->citemsm);
     tableSep->addTab(this->char_abilitys, tr("技能"));
@@ -260,8 +279,8 @@ void QueryUtility::refreshCharacter__About()
 {
     auto char_id = this->character->currentData();
 
-    qlonglong anyTime,endtime;
-    auto result = Support::DBTool::getRealtimeOfEventnode(this->ev_node, anyTime, endtime);
+    qlonglong starttime,endtime;
+    auto result = Support::DBTool::getRealtimeOfEventnode(this->ev_node, starttime, endtime);
     if(!result) return;
 
 
@@ -295,6 +314,41 @@ void QueryUtility::refreshCharacter__About()
     this->cabilitysm->setHeaderData(2, Qt::Horizontal, "等级");
     this->cabilitysm->setHeaderData(3, Qt::Horizontal, "备注");
     this->char_abilitys->resizeColumnsToContents();
+
+
+    //age,birthday,deathday,nicknames,comment
+    q.prepare("select "
+              "nikename, "
+              "birthday, "
+              "deathday, "
+              "comment "
+              "from table_characterbasic "
+              "where char_id=:cid;");
+    q.bindValue(":cid", char_id);
+    if(!q.exec()){
+        qDebug() << q.lastError();
+        return;
+    }
+    auto time_t(new Support::SuperDateTool(this));
+    if(q.next()){
+        this->char_nickname->setText(q.value(0).toString());
+        this->char_comment->setText(q.value(3).toString());
+        auto birthday = q.value(1).toLongLong();
+        time_t->resetDate(birthday);
+        this->char_birthday->setText(time_t->toString());
+
+        auto deathday= q.value(2).toLongLong();
+        time_t->resetDate(deathday);
+        this->char_deathday->setText(time_t->toString());
+
+        auto span = starttime-birthday;
+        time_t->resetDate(span);
+        auto preNum = span<0?"未出世":time_t->toString();
+        span = endtime - birthday;
+        time_t->resetDate(span);
+        auto lastNum = span<0?"未出世":time_t->toString();
+        this->char_age->setText(preNum + "-" + lastNum);
+    }
 }
 
 void QueryUtility::refreshLocation_About()
@@ -340,6 +394,11 @@ void QueryUtility::refreshLocation_About()
     }
     this->physicalView->resizeColumnsToContents();
     this->socialView->resizeColumnsToContents();
+
+    QStringList header;
+    header << "事件节点" << "描述";
+    this->physicalModel->setHorizontalHeaderLabels(header);
+    this->socialModel->setHorizontalHeaderLabels(header);
 }
 
 void QueryUtility::targetTabContextRefresh(int index)

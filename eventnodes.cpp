@@ -1,5 +1,6 @@
 #include "eventnodes.h"
 #include "location.h"
+#include "dbtool.h"
 
 #include <QGridLayout>
 #include <QGroupBox>
@@ -178,6 +179,7 @@ void EventNodes::slot_queryEventNode(const QString &text)
 void EventNodes::slot_respond2Additem()
 {
     QString eName;
+    qlonglong startTime=0,endTime=1;
     if(this->eventModel->rowCount(QModelIndex()) == 0){
         eName = this->eventNameInput->text();
     }else{
@@ -190,14 +192,20 @@ void EventNodes::slot_respond2Additem()
         if(eventName.isNull())
             return;
 
+        auto evnode = this->eventModel->oppositeID(index);
+        auto result = Support::DBTool::getRealtimeOfEventnode(evnode.toLongLong(), startTime, endTime);
+        if(!result) return;
+
         eName = eventName.toString();
     }
 
     QSqlQuery q;
     q.prepare("insert into table_eventnodebasic "
               "(node_name, event_name, begin_time, end_time, node_desc, comment) "
-              "values('新节点', :eName, 0, 1, '待输入', '无备注');");
+              "values('新节点', :eName, :start, :end, '待输入', '无备注');");
     q.bindValue(":eName", eName);
+    q.bindValue(":start", startTime);
+    q.bindValue(":end", endTime);
 
     if(!q.exec()){
         qDebug() << q.lastError();

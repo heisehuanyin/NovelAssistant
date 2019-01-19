@@ -2,6 +2,7 @@
 #define QUERYUTILITY_H
 
 #include <QComboBox>
+#include <QLabel>
 #include <QSqlQueryModel>
 #include <QStandardItemModel>
 #include <QTabWidget>
@@ -49,6 +50,11 @@ namespace Component {
         QStandardItemModel *const pre_Events;
         StoryDisplay *const eventsView;
         QComboBox *const character;
+        QLabel *const char_age;
+        QLabel *const char_birthday;
+        QLabel *const char_deathday;
+        QLabel *const char_nickname;
+        QLabel *const char_comment;
         QTableView *const char_items;
         QSqlQueryModel *const citemsm;
         QTableView *const char_abilitys;
